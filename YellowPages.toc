@@ -1,0 +1,37 @@
+## Interface: 16001
+## Interface-Retail: 110007, 110100, 110200
+## Interface-Classic: 11505, 11506
+## Interface-Cata: 40401, 40402
+## Title: |cffffd100Yellow-Pages|r - Guild Directory / Gilden-Branchenbuch
+## Title-deDE: |cffffd100Yellow-Pages|r - Das Gilden-Branchenbuch
+## Notes: Guild profession & gathering directory, AH/Vendor material calculator, shopping list and live/offline crafting order system.
+## Notes-deDE: Gildenweites Handwerks- & Sammel-Branchenbuch, Material- & AH-Kostenrechner, Einkaufsliste und Online-/Offline-Auftragssystem.
+## Author: Mirulas
+## Version: 1.0.0
+## SavedVariables: YellowPagesDB
+## SavedVariablesPerCharacter: YellowPagesCharDB
+## IconTexture: Interface\Icons\UI_Profession_Icon
+## X-Category: Guild, Professions, Tradeskill
+## X-License: MIT
+## X-Curse-Project-ID: 1823713
+## AddonCompartmentFunc: YellowPages_ToggleUI
+
+# Localization (enUS / deDE)
+Locales\Locales.lua
+
+# Data & Fallbacks
+Data\VendorReagents.lua
+
+# Core
+Core\Init.lua
+Core\Database.lua
+Core\Pricing.lua
+Core\Inventory.lua
+Core\Scanner.lua
+Core\Comms.lua
+
+# UI
+UI\Theme.lua
+UI\MinimapButton.lua
+UI\MainFrame.lua
+UI\OrderFrame.lua

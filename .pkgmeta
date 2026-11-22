@@ -1,0 +1,13 @@
+package-as: YellowPages
+enable-nolib-creation: no
+
+ignore:
+  - .github
+  - .gitignore
+  - .pkgmeta
+  - CURSEFORGE_RELEASE.md
+  - README.md
+  - LICENSE
+  - YellowPages.zip
+  - Yellow-Pages.toc
+  - icon.png

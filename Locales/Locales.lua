@@ -1,0 +1,387 @@
+--[[
+    Yellow-Pages: Locales.lua
+    Mehrsprachigkeit (Englisch enUS/enGB & Deutsch deDE) automatisch über GetLocale()
+--]]
+
+YellowPages = YellowPages or {}
+
+local locale = (GetLocale and GetLocale()) or "enUS"
+local isGerman = (locale == "deDE")
+
+local enUS = {
+    -- General
+    ADDON_SUBTITLE          = "The Guild Directory",
+    LOADED_MSG              = "Yellow-Pages v%s loaded. Type |cffffd100/yp|r to open.",
+    UNKNOWN                 = "Unknown",
+    NO_GUILD                = "No Guild",
+    YOU_TAG                 = "(You)",
+    OFFLINE_TAG             = "(offline)",
+    REAGENT_FALLBACK        = "Reagent",
+    RECIPE_FALLBACK         = "Recipe",
+    PROFESSION_FALLBACK     = "Profession",
+    GENERAL                 = "General",
+
+    -- Minimap
+    MINIMAP_TITLE           = "|cffffd100Yellow-Pages|r",
+    MINIMAP_SUBTITLE        = "Your Guild's Crafting Directory",
+    MINIMAP_LEFT_CLICK      = "|cff00ff00Left-Click:|r Open main window",
+    MINIMAP_RIGHT_CLICK     = "|cff00ff00Right-Click:|r Scan open profession",
+    MINIMAP_SHIFT_CLICK     = "|cff00ff00Shift + Click:|r Sync with guild",
+
+    -- Main Frame Header & Top Bar
+    STATUS_BAR_TEXT         = "Guild: |cffffd100%s|r | Recipes found: |cff00ff00%d|r",
+    SEARCH_PLACEHOLDER      = "Recipe or reagent...",
+    ALL_PROFESSIONS         = "All Professions",
+    FILTER_PROFESSION_TITLE = "Filter Profession",
+    ONLINE_ONLY             = "Online Crafters Only",
+    BTN_SCAN_PROF           = "Scan Prof.",
+    BTN_SYNC                = "Sync",
+    BTN_ORDERS_TAB          = "Orders (%d)",
+    BTN_SHOPPING_TAB        = "Shopping (%d)",
+    BTN_INFO_TAB            = "Info & Guide",
+    INFO_TAB_SUBTITLE       = "Show short explanation & workflow guide for Yellow-Pages.",
+    INFO_PAGE_HEADER        = "Info & Guide",
+    INFO_TITLE              = "Yellow-Pages — Your Guild's Crafting & Gathering Directory",
+    INFO_INTRO              = "Yellow-Pages connects crafters, gatherers, and guild members. Automatically synchronize recipes, calculate material costs, and place live or offline orders directly in-game.",
+    INFO_SEC1_TITLE         = "1. Scanning & Guild Synchronization",
+    INFO_SEC1_TEXT          = "• Crafting & Secondary Professions: Simply open your profession window (Alchemy, Blacksmithing, Leatherworking, Cooking, etc.) — Yellow-Pages scans all learned recipes automatically.\n• Gathering Professions (Herbalism, Mining, Skinning): Automatically detected from your skill rank upon login and skill-up.\n• Click 'Sync' (or Shift+Click the minimap icon) to broadcast your professions to the guild.",
+    INFO_SEC2_TITLE         = "2. Material Stock & Cost Calculation",
+    INFO_SEC2_TEXT          = "• Select any recipe on the left to inspect all required materials on the right.\n• The 'Have / Need' column checks your own bags and bank (supports Syndicator/Baganator).\n• Vendor supplies show fixed NPC prices; trade goods show live Auction House prices (via Auctionator, TSM, or Auctioneer).",
+    INFO_SEC3_TITLE         = "3. Crafting Requests (Online & Offline Crafters)",
+    INFO_SEC3_TEXT          = "• Click 'Request' next to an available crafter. Your current material stock is transmitted automatically.\n• Online Crafters receive a whisper with a clickable link [Yellow-Pages: Open Request]. Their window shows your missing mats vs. their own bags & bank, with 4 one-click reply buttons (All Mats Ready / Get Remaining Mats / Bring ALL Mats / Busy).\n• Offline Crafters: Requests to offline crafters are stored in the Guild Relay and delivered automatically as soon as the crafter logs in!",
+    INFO_SEC4_TITLE         = "4. Shopping List (AH & Vendor) & Crafter Order Queue",
+    INFO_SEC4_TEXT          = "• Confirming a crafter's offer automatically adds any missing materials to your Shopping List (coin tab on the right). It pops up automatically at the Auction House (1-click search) and at Vendors (1-click direct buy)!\n• The crafter receives the confirmed order in their Order Queue (scroll tab on the right), which automatically ticks off as 'Done' once the item is crafted.",
+    INFO_SEC5_TITLE         = "5. Chat Commands",
+    INFO_SEC5_TEXT          = "|cffffd100/yp|r — Open/close main window   |   |cffffd100/yp scan|r — Scan open profession   |   |cffffd100/yp sync|r — Sync with guild\n|cffffd100/yp shop|r — Toggle Shopping List   |   |cffffd100/yp orders|r — Toggle Order Queue   |   |cffffd100/yp info|r — Open this Info page",
+    BTN_BACK_TO_RECIPES     = "Back to Recipes",
+
+    -- Sort & Quality Filter
+    SORT_MENU_TITLE         = "Sort Recipes",
+    SORT_NAME_ASC           = "Name (A - Z)",
+    SORT_LEVEL_ASC          = "Level (Ascending)",
+    SORT_LEVEL_DESC         = "Level (Descending)",
+    SORT_QUALITY_DESC       = "Quality (Rare first)",
+    SORT_QUALITY_ASC        = "Quality (Common first)",
+    SORT_SHORT_NAME         = "Sort: Name",
+    SORT_SHORT_LVL_ASC      = "Sort: Level ↑",
+    SORT_SHORT_LVL_DESC     = "Sort: Level ↓",
+    SORT_SHORT_QUAL_DESC    = "Sort: Quality ↓",
+    SORT_SHORT_QUAL_ASC     = "Sort: Quality ↑",
+
+    FILTER_QUALITY_TITLE    = "Filter Quality",
+    QUALITY_ALL             = "All Qualities",
+    QUALITY_0               = "Poor",
+    QUALITY_1               = "Common",
+    QUALITY_2               = "Uncommon",
+    QUALITY_3               = "Rare",
+    QUALITY_4               = "Epic",
+    QUALITY_5               = "Legendary",
+
+    -- Recipe List & Detail Pane
+    SELECT_RECIPE           = "Select a recipe",
+    COL_LEVEL               = "Level",
+    COL_RECIPE              = "Recipe",
+    COL_CRAFTERS            = "Crafters",
+    COL_HAVE_NEED           = "Have / Need",
+    LEVEL_FMT               = "Level %d",
+    CRAFTER_COUNT_FMT       = "%d Crafter",
+    QTY_LABEL               = "Qty:",
+    REAGENTS_HEADER         = "Required Materials & Prices",
+    TAG_VENDOR              = "|cff69ccf0[Vendor]|r",
+    TAG_AH                  = "|cffffd100[AH]|r",
+    VENDOR_COST_FMT         = "Vendor Supplies",
+    AH_COST_FMT             = "Auction House",
+    TOTAL_COST_FMT          = "Total Cost",
+    CRAFTERS_HEADER         = "Available Crafters in Guild",
+    BTN_REQUEST             = "Request",
+
+    -- Order Frame (Crafter View)
+    ORDER_WINDOW_TITLE      = "|cffffd100Crafting Request|r",
+    ORDER_REQUESTER_FMT     = "Requester: |cff00ff00%s|r",
+    ORDER_QTY_FMT           = "Requested Quantity: |cffffd100%d|r",
+    ORDER_BUYER_ALL_MATS    = "|cff33e633Requester already has ALL required materials!|r",
+    ORDER_BUYER_MISSING_HDR = "|cffffa500Requester is missing the following materials:|r",
+    ORDER_MATS_HEADER       = "|cffffd100Material Breakdown (Requester vs. Your Bags/Bank):|r",
+    ORDER_ROW_BUYER_OK      = "|cff33e633Requester has %d/%d|r |cff888888(You: %d Bag, %d Bank)|r",
+    ORDER_ROW_CRAFTER_COVERS= "|cffffa500Miss: %d|r -> |cff33e633You have %d (Bag: %d, Bank: %d)|r",
+    ORDER_ROW_STILL_MISSING = "|cffcc4040Miss: %d|r -> |cffcc4040You: %d (Bag: %d, Bank: %d) | Buy: %d|r",
+    ORDER_ROW_SELF_OK       = "|cff33e633%d/%d (Bag: %d, Bank: %d)|r",
+    ORDER_ROW_SELF_MISS     = "|cffcc4040Missing: %d (Bag: %d, Bank: %d)|r",
+
+    -- Order Frame Reply Buttons
+    BTN_REPLY_HAVE_ALL      = "All Mats Ready!",
+    BTN_REPLY_MISSING       = "Get Remaining Mats",
+    BTN_REPLY_BRING_ALL     = "Bring ALL Mats!",
+    BTN_REPLY_BUSY          = "Busy / No Time",
+    BTN_CLOSE               = "Close",
+
+    TT_REPLY_HAVE_ALL       = "Tell requester you have all (missing) materials and can craft it.",
+    TT_REPLY_MISSING        = "Ask requester to only get the materials neither of you have.",
+    TT_REPLY_BRING_ALL      = "Ask requester to provide ALL materials themselves (keep your own stock).",
+    TT_REPLY_BUSY           = "Politely tell requester you don't have time right now.",
+
+    -- Active Order Queue (Crafter's Todo List)
+    QUEUE_WINDOW_TITLE      = "|cffffd100Crafting Order Queue|r",
+    QUEUE_SUBTITLE          = "Confirmed orders automatically tick off when you craft the item.",
+    QUEUE_EMPTY             = "No active crafting orders right now.",
+    QUEUE_FOR_BUYER         = "For: |cff00ff00%s|r",
+    QUEUE_STATUS_DONE       = "|cff33e633Done (%d/%d)|r",
+    QUEUE_STATUS_OPEN       = "|cffffd100Open (%d/%d)|r",
+    BTN_CLEAR_DONE          = "Remove Completed",
+    TT_TOGGLE_DONE          = "Mark as Done / Open",
+    TT_DELETE_ORDER         = "Remove order from list",
+
+    -- Shopping List (Requester's AH & Vendor Pop-Up)
+    SHOP_WINDOW_TITLE       = "|cffffd100Yellow-Pages: Shopping List|r",
+    SHOP_SUBTITLE           = "Click any material to search in the AH or buy directly at a vendor.",
+    SHOP_EMPTY              = "Your shopping list is empty.",
+    SHOP_CLICK_TO_SEARCH    = "Click to search |cffffd100%s|r in the AH or buy at a vendor",
+    SHOP_AH_NOT_OPEN        = "Please open the Auction House or a Vendor first for |cffffd100%s|r!",
+    SHOP_SEARCHING_AH       = "Searching Auction House for: |cffffd100%s|r",
+    SHOP_BOUGHT_VENDOR      = "Bought |cff00ff00%dx %s|r directly from the vendor!",
+    SHOP_VENDOR_NOT_SOLD    = "This vendor does not sell |cffffd100%s|r.",
+    BTN_SHOP_CLEAR_BOUGHT   = "Clear Bought",
+    BTN_SHOP_CLEAR_ALL      = "Clear All",
+    MSG_SHOP_ADDED          = "%d missing material(s) added to your Shopping List! (Opens automatically at the AH & Vendors)",
+
+    -- Chat & Whisper Messages
+    CHAT_LINK_OPEN_ORDER    = "[Yellow-Pages: Open Request #%d]",
+    CHAT_LINK_CONFIRM_ORDER = "[Yellow-Pages: Confirm & Place Order]",
+    WHISPER_REQ_ALL_MATS    = "[YellowPages] Hi! Could you craft %s x%d for me? I have all the materials ready! [YP:%d:%d]",
+    WHISPER_REQ_MISSING_MATS= "[YellowPages] Hi! Could you craft %s x%d for me? I am still missing: %s. Do you happen to have them? [YP:%d:%d]",
+    WHISPER_REPLY_ALL_READY = "[YellowPages] Hi %s! I can craft %s x%d for you - all required materials are covered! Click to confirm: [YPC:%d:%d:ALL]",
+    WHISPER_REPLY_NEED_MATS = "[YellowPages] Hi %s! To craft %s x%d, please still get: %s. Click to confirm order: [YPC:%d:%d:REM]",
+    WHISPER_REPLY_BRING_ALL = "[YellowPages] Hi %s! I can craft %s x%d for you, but please bring all materials yourself (still missing on your end: %s). Confirm: [YPC:%d:%d:BRING]",
+    WHISPER_REPLY_BRING_FULL= "[YellowPages] Hi %s! I can craft %s x%d for you - please bring all required materials (%s). Confirm: [YPC:%d:%d:BRING]",
+    WHISPER_REPLY_BUSY      = "[YellowPages] Hi %s! Sorry, I don't have time right now (busy/combat/dungeon). Please ask me again later!",
+    WHISPER_ORDER_CONFIRMED = "[YellowPages] Great, I confirm the order for %s x%d! Thank you!",
+
+    -- System Messages
+    MSG_SCAN_SUCCESS        = "Profession |cffffd100%s|r scanned: |cff00ff00%d recipes|r saved.",
+    MSG_SCAN_NO_WINDOW      = "No open profession window found. Please open your profession window first!",
+    MSG_SYNC_SENT           = "Synchronization sent to guild.",
+    MSG_DB_RESET            = "Guild database reset.",
+    MSG_ORDER_SENT          = "Crafting request for |cffffd100%s|r sent to |cff00ff00%s|r.",
+    MSG_OFFLINE_ORDER_SAVED = "Offline request for |cffffd100%s x%d|r saved for |cff00ff00%s|r! It will be automatically delivered via the guild as soon as they log in.",
+    MSG_OFFLINE_DELIVERED   = "|cffffa500[Offline Request]|r While you were offline, |cff00ff00%s|r requested |cffffd100%s x%d|r! %s",
+    TT_REQUEST_OFFLINE      = "Crafter is offline: Saves the request in the guild relay and delivers it automatically when they log in.",
+    MSG_ORDER_RECEIVED      = "New crafting request from |cff00ff00%s|r for |cffffd100%s|r! %s",
+    MSG_REPLY_SENT_ALL      = "Offer sent to |cff00ff00%s|r (All materials covered - waiting for confirmation).",
+    MSG_REPLY_SENT_MISSING  = "Offer sent to |cff00ff00%s|r (Still needed: %s - waiting for confirmation).",
+    MSG_REPLY_SENT_BRING_ALL= "Offer sent to |cff00ff00%s|r (Requester brings all mats: %s - waiting for confirmation).",
+    MSG_REPLY_SENT_BUSY     = "Reply sent to |cff00ff00%s|r (Busy right now).",
+    MSG_CONFIRM_SENT        = "Order for |cffffd100%s x%d|r confirmed with |cff00ff00%s|r!",
+    MSG_ORDER_QUEUED        = "New confirmed order added to your Order List: |cffffd100%s x%d|r for |cff00ff00%s|r!",
+    MSG_ORDER_CRAFTED_DONE  = "Order completed: |cff33e633%s x%d|r for |cff00ff00%s|r has been ticked off!",
+    MSG_RECIPE_NOT_FOUND    = "Recipe #%s not found in database.",
+
+    -- Normalized Professions
+    PROF_ALCHEMY            = "Alchemy",
+    PROF_BLACKSMITHING      = "Blacksmithing",
+    PROF_ENCHANTING         = "Enchanting",
+    PROF_ENGINEERING        = "Engineering",
+    PROF_INSCRIPTION        = "Inscription",
+    PROF_JEWELCRAFTING      = "Jewelcrafting",
+    PROF_LEATHERWORKING     = "Leatherworking",
+    PROF_TAILORING          = "Tailoring",
+    PROF_HERBALISM          = "Herbalism",
+    PROF_MINING             = "Mining",
+    PROF_SKINNING           = "Skinning",
+    PROF_COOKING            = "Cooking",
+    PROF_FIRSTAID           = "First Aid",
+}
+
+local deDE = {
+    -- Allgemein
+    ADDON_SUBTITLE          = "Das Gilden-Branchenbuch",
+    LOADED_MSG              = "Gelbe Seiten v%s geladen. Tippe |cffffd100/yp|r zum Öffnen.",
+    UNKNOWN                 = "Unbekannt",
+    NO_GUILD                = "Keine Gilde",
+    YOU_TAG                 = "(Du)",
+    OFFLINE_TAG             = "(offline)",
+    REAGENT_FALLBACK        = "Reagenz",
+    RECIPE_FALLBACK         = "Rezept",
+    PROFESSION_FALLBACK     = "Beruf",
+    GENERAL                 = "Allgemein",
+
+    -- Minimap
+    MINIMAP_TITLE           = "|cffffd100Yellow-Pages|r (Gelbe Seiten)",
+    MINIMAP_SUBTITLE        = "Das Branchenbuch deiner Gilde",
+    MINIMAP_LEFT_CLICK      = "|cff00ff00Linksklick:|r Hauptfenster öffnen",
+    MINIMAP_RIGHT_CLICK     = "|cff00ff00Rechtsklick:|r Geöffnetes Handwerk scannen",
+    MINIMAP_SHIFT_CLICK     = "|cff00ff00Shift + Klick:|r Gilden-Synchronisation starten",
+
+    -- Hauptfenster Header & Obere Leiste
+    STATUS_BAR_TEXT         = "Gilde: |cffffd100%s|r | Rezepte gefunden: |cff00ff00%d|r",
+    SEARCH_PLACEHOLDER      = "Rezept oder Zutat...",
+    ALL_PROFESSIONS         = "Alle Berufe",
+    FILTER_PROFESSION_TITLE = "Beruf filtern",
+    ONLINE_ONLY             = "Nur Online Handwerker",
+    BTN_SCAN_PROF           = "Beruf scannen",
+    BTN_SYNC                = "Sync",
+    BTN_ORDERS_TAB          = "Aufträge (%d)",
+    BTN_SHOPPING_TAB        = "Einkauf (%d)",
+    BTN_INFO_TAB            = "Info & Anleitung",
+    INFO_TAB_SUBTITLE       = "Kurze Erklärung und Anleitung zu Yellow-Pages anzeigen.",
+    INFO_PAGE_HEADER        = "Info & Anleitung",
+    INFO_TITLE              = "Yellow-Pages — Das Handwerks- & Sammel-Branchenbuch deiner Gilde",
+    INFO_INTRO              = "Yellow-Pages vernetzt Handwerker, Sammler und Gildenmitglieder. Rezepte werden gildenweit synchronisiert, Materialkosten berechnet und Aufträge direkt im Spiel (auch offline) abgewickelt.",
+    INFO_SEC1_TITLE         = "1. Berufe erfassen & mit der Gilde synchronisieren",
+    INFO_SEC1_TEXT          = "• Herstellungs- & Nebenberufe: Öffne einfach dein Berufsfenster (z. B. Lederverarbeitung, Alchemie, Schmiedekunst, Kochkunst) – Yellow-Pages scannt deine gelernten Rezepte automatisch.\n• Sammelberufe (Kräuterkunde, Bergbau, Kürschnerei): Werden automatisch anhand deiner aktuellen Fertigkeitsstufe beim Login und beim Skill-Aufstieg erkannt.\n• Über den Button „Sync“ (oder Shift+Klick auf das Minimap-Symbol) teilst du deine Berufe mit der Gilde.",
+    INFO_SEC2_TITLE         = "2. Materialbestand & Preisberechnung",
+    INFO_SEC2_TEXT          = "• Wähle links ein Rezept oder einen Rohstoff aus, um rechts alle benötigten Materialien und Preise zu sehen.\n• „Besitz / Bedarf“ prüft automatisch deinen eigenen Bestand in Taschen und auf der Bank (unterstützt auch Syndicator / Baganator).\n• Händler-Zutaten werden mit festen NPC-Preisen berechnet, Handelswaren mit aktuellen Auktionshaus-Preisen (über Auctionator, TSM oder Auctioneer).",
+    INFO_SEC3_TITLE         = "3. Handwerker-Anfragen (Online & Offline)",
+    INFO_SEC3_TEXT          = "• Klicke bei einem Handwerker auf „Anfragen“. Dein aktueller Materialbestand wird automatisch mit übermittelt.\n• Online-Handwerker erhalten ein Flüstern mit klickbarem Link [Yellow-Pages: Anfrage öffnen]. Ihr Fenster zeigt sofort, was dir fehlt und was sie selbst auf Tasche/Bank haben – mit 4 Antwort-Buttons (Alle Mats da! / Rest-Mats anfordern / Alle Mats anfordern / Gerade keine Zeit).\n• Offline-Handwerker: Anfragen an Offline-Spieler werden im Gilden-Relais gespeichert und dem Handwerker beim nächsten Login automatisch zugestellt!",
+    INFO_SEC4_TITLE         = "4. Einkaufsliste (AH & Händler) & Auftragsliste",
+    INFO_SEC4_TEXT          = "• Sobald du im Chat auf [Yellow-Pages: Auftrag bestätigen] klickst, landen fehlende Materialien automatisch in deiner Einkaufsliste (Münz-Button rechts). Diese öffnet sich automatisch am Auktionshaus (1-Klick-Suche) und bei Händlern (1-Klick-Direktkauf)!\n• Beim Handwerker landet der bestätigte Auftrag in der Auftragsliste (Schriftrollen-Button rechts) und wird beim Herstellen des Gegenstands automatisch als „Erledigt“ abgehakt.",
+    INFO_SEC5_TITLE         = "5. Chat-Befehle",
+    INFO_SEC5_TEXT          = "|cffffd100/yp|r — Hauptfenster öffnen/schließen   |   |cffffd100/yp scan|r — Beruf scannen   |   |cffffd100/yp sync|r — Gilden-Sync\n|cffffd100/yp shop|r — Einkaufsliste öffnen   |   |cffffd100/yp orders|r — Auftragsliste öffnen   |   |cffffd100/yp info|r — Diese Info-Seite öffnen",
+    BTN_BACK_TO_RECIPES     = "Zurück zu den Rezepten",
+
+    -- Sortierung & Qualitätsfilter
+    SORT_MENU_TITLE         = "Rezepte sortieren",
+    SORT_NAME_ASC           = "Name (A - Z)",
+    SORT_LEVEL_ASC          = "Stufe (Aufsteigend)",
+    SORT_LEVEL_DESC         = "Stufe (Absteigend)",
+    SORT_QUALITY_DESC       = "Qualität (Selten zuerst)",
+    SORT_QUALITY_ASC        = "Qualität (Gewöhnl. zuerst)",
+    SORT_SHORT_NAME         = "Sort: Name",
+    SORT_SHORT_LVL_ASC      = "Sort: Stufe ↑",
+    SORT_SHORT_LVL_DESC     = "Sort: Stufe ↓",
+    SORT_SHORT_QUAL_DESC    = "Sort: Qualität ↓",
+    SORT_SHORT_QUAL_ASC     = "Sort: Qualität ↑",
+
+    FILTER_QUALITY_TITLE    = "Qualität filtern",
+    QUALITY_ALL             = "Alle Qualitäten",
+    QUALITY_0               = "Schlecht",
+    QUALITY_1               = "Gewöhnlich",
+    QUALITY_2               = "Ungewöhnlich",
+    QUALITY_3               = "Selten (Rar)",
+    QUALITY_4               = "Episch",
+    QUALITY_5               = "Legendär",
+
+    -- Rezeptliste & Detailansicht
+    SELECT_RECIPE           = "Wähle ein Rezept aus",
+    COL_LEVEL               = "Stufe",
+    COL_RECIPE              = "Rezept",
+    COL_CRAFTERS            = "Handwerker",
+    COL_HAVE_NEED           = "Besitz / Bedarf",
+    LEVEL_FMT               = "Stufe %d",
+    CRAFTER_COUNT_FMT       = "%d Handwerker",
+    QTY_LABEL               = "Menge:",
+    REAGENTS_HEADER         = "Benötigte Materialien & Preise",
+    TAG_VENDOR              = "|cff69ccf0[Händler]|r",
+    TAG_AH                  = "|cffffd100[AH]|r",
+    VENDOR_COST_FMT         = "Händler-Zutaten",
+    AH_COST_FMT             = "Auktionshaus",
+    TOTAL_COST_FMT          = "Gesamtkosten",
+    CRAFTERS_HEADER         = "Verfügbare Handwerker in der Gilde",
+    BTN_REQUEST             = "Anfragen",
+
+    -- Auftragsfenster (Handwerker-Ansicht)
+    ORDER_WINDOW_TITLE      = "|cffffd100Handwerker-Anfrage|r",
+    ORDER_REQUESTER_FMT     = "Anfragender: |cff00ff00%s|r",
+    ORDER_QTY_FMT           = "Gewünschte Anzahl: |cffffd100%d Stück|r",
+    ORDER_BUYER_ALL_MATS    = "|cff33e633Der Anfragende hat bereits ALLE Materialien!|r",
+    ORDER_BUYER_MISSING_HDR = "|cffffa500Dem Anfragenden fehlen noch Materialien:|r",
+    ORDER_MATS_HEADER       = "|cffffd100Material-Abgleich (Anfragender vs. Deine Tasche/Bank):|r",
+    ORDER_ROW_BUYER_OK      = "|cff33e633Anfragender hat %d/%d|r |cff888888(Du: %d Tasche, %d Bank)|r",
+    ORDER_ROW_CRAFTER_COVERS= "|cffffa500Fehlt: %d|r -> |cff33e633Du hast %d (Tasche: %d, Bank: %d)|r",
+    ORDER_ROW_STILL_MISSING = "|cffcc4040Fehlt: %d|r -> |cffcc4040Du: %d (Tasche: %d, Bank: %d) | Besorgen: %d|r",
+    ORDER_ROW_SELF_OK       = "|cff33e633%d/%d (Tasche: %d, Bank: %d)|r",
+    ORDER_ROW_SELF_MISS     = "|cffcc4040Fehlen: %d (Tasche: %d, Bank: %d)|r",
+
+    -- Auftragsfenster Antwort-Buttons
+    BTN_REPLY_HAVE_ALL      = "Alle Mats da!",
+    BTN_REPLY_MISSING       = "Rest-Mats anfordern",
+    BTN_REPLY_BRING_ALL     = "Alle Mats anfordern",
+    BTN_REPLY_BUSY          = "Gerade keine Zeit",
+    BTN_CLOSE               = "Schließen",
+
+    TT_REPLY_HAVE_ALL       = "Dem Anfragenden antworten, dass alle (fehlenden) Materialien da sind.",
+    TT_REPLY_MISSING        = "Nur die Materialien anfordern, die weder der Anfragende noch du auf Lager hast.",
+    TT_REPLY_BRING_ALL      = "Alle Materialien vom Anfragenden verlangen (eigenen Bestand behalten).",
+    TT_REPLY_BUSY           = "Dem Anfragenden höflich mitteilen, dass du gerade keine Zeit hast.",
+
+    -- Aktive Auftragsliste (Todo-Liste des Handwerkers)
+    QUEUE_WINDOW_TITLE      = "|cffffd100Auftragsliste (Handwerker)|r",
+    QUEUE_SUBTITLE          = "Bestätigte Aufträge werden beim Herstellen automatisch abgehakt.",
+    QUEUE_EMPTY             = "Aktuell liegen keine bestätigten Handwerks-Aufträge vor.",
+    QUEUE_FOR_BUYER         = "Für: |cff00ff00%s|r",
+    QUEUE_STATUS_DONE       = "|cff33e633Erledigt (%d/%d)|r",
+    QUEUE_STATUS_OPEN       = "|cffffd100Offen (%d/%d)|r",
+    BTN_CLEAR_DONE          = "Erledigte entfernen",
+    TT_TOGGLE_DONE          = "Als Erledigt / Offen markieren",
+    TT_DELETE_ORDER         = "Auftrag komplett aus der Liste entfernen",
+
+    -- Einkaufsliste (AH & Händler Pop-Up für den Auftraggeber)
+    SHOP_WINDOW_TITLE       = "|cffffd100Yellow-Pages: Einkaufsliste|r",
+    SHOP_SUBTITLE           = "Klicke auf ein Material für die AH-Suche oder den Direktkauf beim Händler.",
+    SHOP_EMPTY              = "Deine Einkaufsliste ist aktuell leer.",
+    SHOP_CLICK_TO_SEARCH    = "Klicken, um |cffffd100%s|r im AH zu suchen oder beim Händler zu kaufen",
+    SHOP_AH_NOT_OPEN        = "Bitte öffne zuerst das Auktionshaus oder einen Händler für |cffffd100%s|r!",
+    SHOP_SEARCHING_AH       = "Suche im Auktionshaus nach: |cffffd100%s|r",
+    SHOP_BOUGHT_VENDOR      = "|cff00ff00%dx %s|r direkt beim Händler gekauft!",
+    SHOP_VENDOR_NOT_SOLD    = "Dieser Händler verkauft kein |cffffd100%s|r.",
+    BTN_SHOP_CLEAR_BOUGHT   = "Gekaufte entfernen",
+    BTN_SHOP_CLEAR_ALL      = "Liste leeren",
+    MSG_SHOP_ADDED          = "%d fehlende(s) Material(ien) in deine Einkaufsliste übernommen! (Öffnet sich automatisch am AH & bei Händlern)",
+
+    -- Chat & Whisper Nachrichten
+    CHAT_LINK_OPEN_ORDER    = "[Yellow-Pages: Anfrage #%d öffnen]",
+    CHAT_LINK_CONFIRM_ORDER = "[Yellow-Pages: Auftrag bestätigen]",
+    WHISPER_REQ_ALL_MATS    = "[YellowPages] Hallo! Könntest du mir %s x%d herstellen? Ich habe alle Materialien komplett da! [YP:%d:%d]",
+    WHISPER_REQ_MISSING_MATS= "[YellowPages] Hallo! Könntest du mir %s x%d herstellen? Mir fehlen noch: %s. Hast du diese evtl. auf Lager? [YP:%d:%d]",
+    WHISPER_REPLY_ALL_READY = "[YellowPages] Hi %s! Ich kann dir %s x%d gerne herstellen – alle (fehlenden) Materialien sind vorhanden! Auftrag bestätigen: [YPC:%d:%d:ALL]",
+    WHISPER_REPLY_NEED_MATS = "[YellowPages] Hi %s! Für %s x%d müsstest du bitte noch besorgen: %s. Auftrag bestätigen: [YPC:%d:%d:REM]",
+    WHISPER_REPLY_BRING_ALL = "[YellowPages] Hi %s! Ich stelle dir %s x%d gerne her, bitte bring alle Mats komplett selbst mit (dir fehlen noch: %s). Auftrag bestätigen: [YPC:%d:%d:BRING]",
+    WHISPER_REPLY_BRING_FULL= "[YellowPages] Hi %s! Ich stelle dir %s x%d gerne her – bitte bring alle benötigten Materialien mit (%s). Auftrag bestätigen: [YPC:%d:%d:BRING]",
+    WHISPER_REPLY_BUSY      = "[YellowPages] Hi %s! Ich habe gerade leider keine Zeit (Kampf/Ini/AFK). Frag mich gerne später nochmal!",
+    WHISPER_ORDER_CONFIRMED = "[YellowPages] Super, ich nehme das Angebot an! Auftrag für %s x%d ist hiermit bestätigt.",
+
+    -- System-Meldungen
+    MSG_SCAN_SUCCESS        = "Beruf |cffffd100%s|r erfasst: |cff00ff00%d Rezepte|r gespeichert.",
+    MSG_SCAN_NO_WINDOW      = "Kein geöffnetes Berufsfenster gefunden. Öffne zuerst dein Handwerksfenster!",
+    MSG_SYNC_SENT           = "Synchronisation an die Gilde gesendet.",
+    MSG_DB_RESET            = "Gilden-Datenbank zurückgesetzt.",
+    MSG_ORDER_SENT          = "Herstellungs-Anfrage für |cffffd100%s|r an |cff00ff00%s|r gesendet.",
+    MSG_OFFLINE_ORDER_SAVED = "Offline-Anfrage für |cffffd100%s x%d|r an |cff00ff00%s|r gespeichert! Sie wird automatisch über die Gilde zugestellt, sobald der Handwerker online kommt.",
+    MSG_OFFLINE_DELIVERED   = "|cffffa500[Offline-Anfrage]|r Während du offline warst, hat |cff00ff00%s|r angefragt: |cffffd100%s x%d|r! %s",
+    TT_REQUEST_OFFLINE      = "Handwerker ist offline: Speichert die Anfrage im Gilden-Relais und stellt sie beim nächsten Login automatisch zu.",
+    MSG_ORDER_RECEIVED      = "Neue Handwerks-Anfrage von |cff00ff00%s|r für |cffffd100%s|r! %s",
+    MSG_REPLY_SENT_ALL      = "Angebot an |cff00ff00%s|r gesendet (Alle Mats da – warte auf Bestätigung).",
+    MSG_REPLY_SENT_MISSING  = "Angebot an |cff00ff00%s|r gesendet (Noch zu besorgen: %s – warte auf Bestätigung).",
+    MSG_REPLY_SENT_BRING_ALL= "Angebot an |cff00ff00%s|r gesendet (Anfragender bringt alle Mats mit – warte auf Bestätigung).",
+    MSG_REPLY_SENT_BUSY     = "Rückmeldung an |cff00ff00%s|r gesendet (Gerade keine Zeit).",
+    MSG_CONFIRM_SENT        = "Auftrag für |cffffd100%s x%d|r bei |cff00ff00%s|r bestätigt!",
+    MSG_ORDER_QUEUED        = "Neuer bestätigter Auftrag in deiner Auftragsliste: |cffffd100%s x%d|r für |cff00ff00%s|r!",
+    MSG_ORDER_CRAFTED_DONE  = "Auftrag erledigt: |cff33e633%s x%d|r für |cff00ff00%s|r wurde automatisch abgehakt!",
+    MSG_RECIPE_NOT_FOUND    = "Rezept #%s nicht in der Datenbank gefunden.",
+
+    -- Normalisierte Berufe
+    PROF_ALCHEMY            = "Alchemie",
+    PROF_BLACKSMITHING      = "Schmiedekunst",
+    PROF_ENCHANTING         = "Verzauberkunst",
+    PROF_ENGINEERING        = "Ingenieurskunst",
+    PROF_INSCRIPTION        = "Inschriftenkunde",
+    PROF_JEWELCRAFTING      = "Juwelenschleifen",
+    PROF_LEATHERWORKING     = "Lederverarbeitung",
+    PROF_TAILORING          = "Schneiderei",
+    PROF_HERBALISM          = "Kräuterkunde",
+    PROF_MINING             = "Bergbau",
+    PROF_SKINNING           = "Kürschnerei",
+    PROF_COOKING            = "Kochen",
+    PROF_FIRSTAID           = "Erste Hilfe",
+}
+
+local activeTable = isGerman and deDE or enUS
+
+YellowPages.L = setmetatable({}, {
+    __index = function(_, key)
+        return activeTable[key] or enUS[key] or key
+    end
+})
+
+function YellowPages:IsGermanLocale()
+    return isGerman
+end
