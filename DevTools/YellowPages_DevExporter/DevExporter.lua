@@ -724,12 +724,29 @@ function YellowPagesDev:ToggleUI()
             Print("Gesammelte Chat-Links geleert.")
         end)
 
+        local btnToggleActive = CreateFrame("Button", nil, devFrame, "UIPanelButtonTemplate")
+        btnToggleActive:SetSize(135, 24)
+        btnToggleActive:SetPoint("RIGHT", btnClearLinks, "LEFT", -8, 0)
+        local function UpdateActiveBtnText()
+            local active = (YellowPagesDevDB == nil or YellowPagesDevDB.enabled ~= false)
+            btnToggleActive:SetText(active and "|cff00ff00Status: AKTIV|r" or "|cffff5555Status: INAKTIV|r")
+        end
+        btnToggleActive:SetScript("OnClick", function()
+            YellowPagesDevDB = YellowPagesDevDB or { recipes = {}, capturedLinks = {} }
+            YellowPagesDevDB.enabled = (YellowPagesDevDB.enabled == false)
+            UpdateActiveBtnText()
+            Print(YellowPagesDevDB.enabled and "DEV-Exporter |cff00ff00AKTIVIERT|r." or "DEV-Exporter |cffff5555INAKTIV|r (Auto-Scan & Chat-Sammler pausiert).")
+        end)
+        devFrame.UpdateActiveBtnText = UpdateActiveBtnText
+        UpdateActiveBtnText()
+
         devFrame:Hide()
     end
 
     if devFrame:IsShown() then
         devFrame:Hide()
     else
+        if devFrame.UpdateActiveBtnText then devFrame.UpdateActiveBtnText() end
         self:RefreshUI()
         devFrame:Show()
     end
@@ -758,13 +775,19 @@ local pending = false
 evFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ADDON_LOADED" then
         if arg1 == "YellowPages_DevExporter" then
-            YellowPagesDevDB = YellowPagesDevDB or { recipes = {}, capturedLinks = {} }
+            YellowPagesDevDB = YellowPagesDevDB or { recipes = {}, capturedLinks = {}, enabled = true }
             YellowPagesDevDB.recipes = YellowPagesDevDB.recipes or {}
             YellowPagesDevDB.capturedLinks = YellowPagesDevDB.capturedLinks or {}
-            Print("Geladen! Öffne Berufe oder sammle Chat-Links mit |cffffd100/ypdev|r.")
+            if YellowPagesDevDB.enabled == nil then YellowPagesDevDB.enabled = true end
+            if YellowPagesDevDB.enabled then
+                Print("Geladen (AKTIV)! Öffne Berufe oder sammle Chat-Links mit |cffffd100/ypdev|r.")
+            else
+                Print("Geladen (|cffff5555INAKTIV|r). Aktivieren mit |cffffd100/ypdev on|r.")
+            end
         end
         return
     end
+    if YellowPagesDevDB and YellowPagesDevDB.enabled == false then return end
     if event:sub(1, 9) == "CHAT_MSG_" then
         YellowPagesDev:CaptureChatLinks(arg1, arg2)
         return
@@ -782,8 +805,18 @@ SlashCmdList["YELLOWPAGESDEV"] = function(msg)
     local cmd = (msg or ""):lower():trim()
     if cmd == "scan" then
         YellowPagesDev:ScanOpenProfession(true)
+    elseif cmd == "on" or cmd == "aktiv" then
+        YellowPagesDevDB = YellowPagesDevDB or { recipes = {}, capturedLinks = {} }
+        YellowPagesDevDB.enabled = true
+        if devFrame and devFrame.UpdateActiveBtnText then devFrame.UpdateActiveBtnText() end
+        Print("DEV-Exporter |cff00ff00AKTIVIERT|r.")
+    elseif cmd == "off" or cmd == "inaktiv" then
+        YellowPagesDevDB = YellowPagesDevDB or { recipes = {}, capturedLinks = {} }
+        YellowPagesDevDB.enabled = false
+        if devFrame and devFrame.UpdateActiveBtnText then devFrame.UpdateActiveBtnText() end
+        Print("DEV-Exporter |cffff5555INAKTIV|r (Auto-Scan & Chat-Sammler pausiert).")
     elseif cmd == "reset" then
-        YellowPagesDevDB = { recipes = {} }
+        YellowPagesDevDB = { recipes = {}, capturedLinks = {}, enabled = (YellowPagesDevDB and YellowPagesDevDB.enabled ~= false) }
         if YellowPagesDev.RefreshUI then YellowPagesDev:RefreshUI() end
         Print("DEV-Datenbank geleert.")
     else

@@ -367,7 +367,7 @@ function YellowPages:CreateMainFrame()
         YellowPages:SetInfoPageShown(not showingInfoPage)
     end)
     infoSideTab:SetScale(0.68)
-    infoSideTab:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMRIGHT", 0, 10)
+    infoSideTab:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMRIGHT", 0, 42)
     infoSideTab:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         GameTooltip:SetText(L["BTN_INFO_TAB"], unpack(Theme.FPT.gold))
@@ -1100,6 +1100,10 @@ function YellowPages:UpdateDetailPane()
                 if self.itemID and self.itemID > 0 then
                     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                     GameTooltip:SetItemByID(self.itemID)
+                    if self.gbCount and self.gbCount > 0 then
+                        GameTooltip:AddLine(" ")
+                        GameTooltip:AddLine(string.format(L["GUILDBANK_TOOLTIP_FMT"], self.gbCount), 0.4, 0.8, 1.0)
+                    end
                     GameTooltip:Show()
                 end
             end)
@@ -1110,11 +1114,14 @@ function YellowPages:UpdateDetailPane()
 
         row:SetPoint("TOPLEFT", 0, matY)
         row.itemID = mat.itemID
+        local gbCount = self.GetGuildBankItemCount and self:GetGuildBankItemCount(mat.itemID) or 0
+        row.gbCount = gbCount
         row.icon:SetTexture(mat.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
 
         local isVendor = (mat.source == "VENDOR" or mat.source == "VENDOR_ESTIMATE")
         local srcTag = isVendor and L["TAG_VENDOR"] or ""
-        row.nameText:SetText(string.format("|cfff7ead1%s|r %s", mat.name, srcTag))
+        local gbTag = (gbCount > 0) and string.format(" |cff66ccff[GB: %d]|r", gbCount) or ""
+        row.nameText:SetText(string.format("|cfff7ead1%s|r %s%s", mat.name, srcTag, gbTag))
 
         local bagCount = self:GetBagItemCount(mat.itemID)
         local bankCount = self:GetBankItemCount(mat.itemID)

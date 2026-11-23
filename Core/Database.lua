@@ -468,8 +468,12 @@ function YellowPages:RegisterGatheringProfession(memberName, classEn, profName, 
     if existingProf and existingProf.recipes then
         for _, rID in ipairs(existingProf.recipes) do
             if rID < 900000 then
-                table.insert(existingRecipes, rID)
-                knownSet[rID] = true
+                local catEntry = self.RecipeCatalog and self.RecipeCatalog[rID]
+                local reqSkill = catEntry and catEntry.level or 0
+                if skillRank <= 0 or reqSkill <= skillRank then
+                    table.insert(existingRecipes, rID)
+                    knownSet[rID] = true
+                end
             end
         end
     end

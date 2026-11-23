@@ -7,7 +7,7 @@
 ## Notes: Guild profession & gathering directory, AH/Vendor material calculator, shopping list and live/offline crafting order system.
 ## Notes-deDE: Gildenweites Handwerks- & Sammel-Branchenbuch, Material- & AH-Kostenrechner, Einkaufsliste und Online-/Offline-Auftragssystem.
 ## Author: Mirulas
-## Version: 1.0.7
+## Version: 1.0.8
 ## SavedVariables: YellowPagesDB
 ## SavedVariablesPerCharacter: YellowPagesCharDB
 ## IconTexture: Interface\Icons\UI_Profession_Icon

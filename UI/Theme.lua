@@ -70,7 +70,7 @@ Theme.QUALITY_INFO = {
 -- Berufs-Icons für Portrait und rechte Seiten-Tabs
 -- Hammer & Pickel aus dem Berufe-Fenster (Alle Berufe + Minimap) & Buch-Icon für die Info-Seite
 Theme.ALL_PROF_ICON = "Interface\\Icons\\UI_Profession_Icon"
-Theme.BOOK_ICON = "Interface\\Icons\\INV_Misc_Book_09"
+Theme.BOOK_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 Theme.ORDERS_ICON = "Interface\\Icons\\INV_Scroll_03"
 Theme.SHOPPING_ICON = "Interface\\Icons\\INV_Misc_Coin_01"
 

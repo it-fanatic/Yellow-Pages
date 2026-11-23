@@ -12,6 +12,9 @@ for _, ev in ipairs({
     "PLAYERBANKSLOTS_CHANGED",
     "BAG_UPDATE",
     "BAG_UPDATE_DELAYED",
+    "GUILDBANKFRAME_OPENED",
+    "GUILDBANKFRAME_CLOSED",
+    "GUILDBANKBAGSLOTS_CHANGED",
 }) do
     pcall(invFrame.RegisterEvent, invFrame, ev)
 end
@@ -72,6 +75,7 @@ local function GetContainerSlotItemSafe(bagID, slotID)
 end
 
 local bankOpen = false
+local guildBankOpen = false
 
 -- Scannen des Bankinhalts und Speichern im Charakter-Cache
 local function ScanBank()
@@ -93,6 +97,36 @@ local function ScanBank()
     YellowPagesCharDB.lastBankUpdate = time()
 end
 
+-- Scannen der Gildenbank (als reiner Hinweis, zählt nicht als persönlicher Besitz)
+local function ScanGuildBank()
+    if not guildBankOpen or not GetNumGuildBankTabs or not GetGuildBankItemLink then return end
+    local gName = YellowPages.GetGuildName and YellowPages:GetGuildName()
+    if not gName or gName == "" then return end
+
+    YellowPagesDB = YellowPagesDB or {}
+    YellowPagesDB.guildBankCache = YellowPagesDB.guildBankCache or {}
+    local cache = {}
+
+    local numTabs = GetNumGuildBankTabs() or 0
+    for tab = 1, numTabs do
+        local _, _, isViewable = GetGuildBankTabInfo(tab)
+        if isViewable then
+            for slot = 1, 98 do
+                local link = GetGuildBankItemLink(tab, slot)
+                if link then
+                    local itemID = tonumber(link:match("item:(%d+)"))
+                    if itemID and itemID > 0 then
+                        local _, itemCount = GetGuildBankItemInfo(tab, slot)
+                        cache[itemID] = (cache[itemID] or 0) + (itemCount or 1)
+                    end
+                end
+            end
+        end
+    end
+
+    YellowPagesDB.guildBankCache[gName] = cache
+end
+
 invFrame:SetScript("OnEvent", function(self, event)
     if event == "BANKFRAME_OPENED" then
         bankOpen = true
@@ -103,6 +137,16 @@ invFrame:SetScript("OnEvent", function(self, event)
     elseif event == "PLAYERBANKSLOTS_CHANGED" or event == "BAG_UPDATE_DELAYED" or event == "BAG_UPDATE" then
         if bankOpen then
             ScanBank()
+        end
+    elseif event == "GUILDBANKFRAME_OPENED" then
+        guildBankOpen = true
+        ScanGuildBank()
+    elseif event == "GUILDBANKFRAME_CLOSED" then
+        ScanGuildBank()
+        guildBankOpen = false
+    elseif event == "GUILDBANKBAGSLOTS_CHANGED" then
+        if guildBankOpen then
+            ScanGuildBank()
         end
     end
 end)
@@ -189,4 +233,29 @@ end
 function YellowPages:GetTotalItemCount(itemID)
     if not itemID or itemID == 0 then return 0 end
     return self:GetBagItemCount(itemID) + self:GetBankItemCount(itemID)
+end
+
+-- Liefert den gecachten Bestand in der Gildenbank (reiner Hinweis)
+function YellowPages:GetGuildBankItemCount(itemID)
+    if not itemID or itemID == 0 then return 0 end
+    local gName = self.GetGuildName and self:GetGuildName()
+    if gName and YellowPagesDB and YellowPagesDB.guildBankCache and YellowPagesDB.guildBankCache[gName] then
+        local cached = YellowPagesDB.guildBankCache[gName][itemID]
+        if cached and cached > 0 then
+            return cached
+        end
+    end
+    if Syndicator and Syndicator.API and Syndicator.API.GetInventoryInfoByItemID then
+        local ok, info = pcall(Syndicator.API.GetInventoryInfoByItemID, itemID, true, true)
+        if ok and type(info) == "table" and type(info.guild) == "table" then
+            local total = 0
+            for _, gInfo in ipairs(info.guild) do
+                if (not gName or gInfo.guild == gName) and gInfo.bank and gInfo.bank > 0 then
+                    total = total + gInfo.bank
+                end
+            end
+            if total > 0 then return total end
+        end
+    end
+    return 0
 end

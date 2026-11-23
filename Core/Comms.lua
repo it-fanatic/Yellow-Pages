@@ -646,31 +646,46 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
             for _, id in ipairs(p.recipes) do knownSet[id] = true end
 
             local addedCount = 0
+            local isGathering = YellowPages:GetGatheringCatalogKey(normProf) ~= nil
+            local memberRank = tonumber(rankStr) or 0
             for idStr in idListStr:gmatch("(%d+)") do
                 local id = tonumber(idStr)
                 if id then
-                    -- Falls das Rezept noch nicht in der Rezept-DB ist (z.B. REC noch unterwegs oder ausgelassen),
-                    -- sofort einen Eintrag anlegen, damit es in der Liste aufgeführt wird!
-                    if not YellowPagesDB.recipes[id] then
-                        local itemName, itemLink = YellowPages:GetItemInfoSafe(id)
-                        YellowPages:RegisterRecipe({
-                            id = id,
-                            name = itemName or (L["RECIPE_FALLBACK"] .. " #" .. id),
-                            prof = normProf,
-                            itemLink = itemLink,
-                            itemID = id < 900000 and id or 0
-                        })
+                    -- Bei Sammelberufen (z.B. Bergbau Skill 1) keine alten/ungelernten Verhüttungs- oder High-Skill-Einträge übernehmen
+                    local skipBySkill = false
+                    if isGathering and memberRank > 0 then
+                        local catEntry = YellowPages.RecipeCatalog and YellowPages.RecipeCatalog[id]
+                        local dbEntry = YellowPagesDB.recipes[id]
+                        local reqSkill = (catEntry and catEntry.level) or (dbEntry and (dbEntry.gatherSkill or dbEntry.level)) or 0
+                        if reqSkill > memberRank then
+                            skipBySkill = true
+                        end
                     end
 
-                    if not knownSet[id] then
-                        knownSet[id] = true
-                        table.insert(p.recipes, id)
-                        addedCount = addedCount + 1
+                    if not skipBySkill then
+                        -- Falls das Rezept noch nicht in der Rezept-DB ist (z.B. REC noch unterwegs oder ausgelassen),
+                        -- sofort einen Eintrag anlegen, damit es in der Liste aufgeführt wird!
+                        if not YellowPagesDB.recipes[id] then
+                            local itemName, itemLink = YellowPages:GetItemInfoSafe(id)
+                            YellowPages:RegisterRecipe({
+                                id = id,
+                                name = itemName or (L["RECIPE_FALLBACK"] .. " #" .. id),
+                                prof = normProf,
+                                itemLink = itemLink,
+                                itemID = id < 900000 and id or 0
+                            })
+                        end
+
+                        if not knownSet[id] then
+                            knownSet[id] = true
+                            table.insert(p.recipes, id)
+                            addedCount = addedCount + 1
+                        end
                     end
                 end
             end
 
-            if addedCount > 0 or #p.recipes > 0 then
+            if addedCount > 0 then
                 YellowPages:Print(string.format(L["MSG_RECEIVED_PROF_DATA"], cleanSender, normProf, #p.recipes))
             end
 
