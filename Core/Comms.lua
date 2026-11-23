@@ -94,10 +94,9 @@ end
 -- Meldet der Gilde die eigenen Berufe (trägt GUID mit, um aus dem eigenen Echo den vollen Namen mit Nachnamen zu lernen)
 function YellowPages:BroadcastHello()
     if not self:IsInGuild() then return end
-    local playerName = self:GetPlayerFullName("player")
+    local myData, playerName = self:GetMyMemberData()
     local playerClass = UnitClass and select(2, UnitClass("player")) or "WARRIOR"
     local myGUID = UnitGUID and UnitGUID("player") or ""
-    local myData = YellowPagesDB and YellowPagesDB.members and YellowPagesDB.members[playerName]
 
     local profSummary = {}
     if myData and myData.professions then
@@ -119,10 +118,12 @@ end
 -- Sendet einen Beruf inklusive aller Rezepte und Reagenzien an die Gilde
 function YellowPages:BroadcastProfessionData(profName)
     if not self:IsInGuild() or not profName then return end
-    local playerName = self:GetPlayerFullName("player")
+    local myData, playerName = self:GetMyMemberData()
     local playerClass = UnitClass and select(2, UnitClass("player")) or "WARRIOR"
-    local myData = YellowPagesDB and YellowPagesDB.members and YellowPagesDB.members[playerName]
-    local pData = myData and myData.professions and myData.professions[profName]
+    if not myData or not myData.professions then return end
+
+    local normTargetProf = self:NormalizeProfessionName(profName) or profName
+    local pData = myData.professions[normTargetProf] or myData.professions[profName]
     if not pData or not pData.recipes or #pData.recipes == 0 then return end
 
     for _, recipeID in ipairs(pData.recipes) do
@@ -139,7 +140,7 @@ function YellowPages:BroadcastProfessionData(profName)
             local safeName = (r.name or L["RECIPE_FALLBACK"]):gsub("[:;|]", " "):sub(1, 48)
             local recMsg = string.format("REC:%d:%s:%d:%s:%s",
                 recipeID,
-                profName,
+                normTargetProf,
                 r.itemID or 0,
                 safeName,
                 table.concat(matParts, ",")
@@ -152,7 +153,7 @@ function YellowPages:BroadcastProfessionData(profName)
 
     local chunk = {}
     local chunkLen = 0
-    local header = string.format("PLIST:%s:%d:%d:%s:", profName, pData.rank or 0, pData.maxRank or 300, playerClass)
+    local header = string.format("PLIST:%s:%d:%d:%s:", normTargetProf, pData.rank or 0, pData.maxRank or 300, playerClass)
 
     for _, recipeID in ipairs(pData.recipes) do
         local idStr = tostring(recipeID)
@@ -172,13 +173,21 @@ end
 
 function YellowPages:BroadcastAllMyProfessions()
     if not self:IsInGuild() then return end
-    local playerName = self:GetPlayerFullName("player")
-    local myData = YellowPagesDB and YellowPagesDB.members and YellowPagesDB.members[playerName]
+    local myData = self:GetMyMemberData()
     if not myData or not myData.professions then return end
 
     for profName, _ in pairs(myData.professions) do
         self:BroadcastProfessionData(profName)
     end
+end
+
+-- Fordert eine bidirektionale Synchronisation mit der gesamten Gilde an (sendet eigene Daten und bittet alle Online-Mitglieder um ihre Daten)
+function YellowPages:RequestGuildSync()
+    if not self:IsInGuild() then return end
+    self:BroadcastHello()
+    self:BroadcastAllMyProfessions()
+    self:SendAddonMsg("REQ_SYNC", "GUILD")
+    self:Print(L["MSG_SYNC_SENT"])
 end
 
 -- Schritt 1: Anfragender schickt Anfrage + seine vorhandenen/fehlenden Mats an den Handwerker
@@ -508,10 +517,23 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
             YellowPages:DeliverPendingOfflineOrdersFor(cleanSender)
         end
 
+        if YellowPages.RefreshUI then
+            YellowPages:RefreshUI()
+        end
+
+    elseif msgType == "REQ_SYNC" then
+        -- Ein Gildenmitglied hat auf 'Sync' geklickt -> mit eigenen Berufsdaten antworten
+        local delay = 0.3 + math.random() * 1.2
+        C_Timer.After(delay, function()
+            YellowPages:BroadcastHello()
+            YellowPages:BroadcastAllMyProfessions()
+        end)
+
     elseif msgType == "REC" then
         local recIDStr, profName, itemIDStr, recName, matsStr = data:match("^(%d+):([^:]+):(%d+):([^:]+):(.*)$")
         local recipeID = tonumber(recIDStr)
         if recipeID and profName and recName then
+            local normProf = YellowPages:NormalizeProfessionName(profName) or profName
             local outputItemID = tonumber(itemIDStr) or 0
             local reagents = {}
             for matPair in (matsStr or ""):gmatch("[^,]+") do
@@ -533,7 +555,7 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
             YellowPages:RegisterRecipe({
                 id = recipeID,
                 name = recName,
-                prof = profName,
+                prof = normProf,
                 icon = (existing and existing.icon) or YellowPages:GetItemIconSafe(outputItemID),
                 itemLink = (existing and existing.itemLink) or itemLink,
                 itemID = outputItemID,
@@ -542,17 +564,17 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
         end
 
     elseif msgType == "PLIST" then
-        local profName, rankStr, maxRankStr, classEn, idListStr = data:match("^([^:]+):(%d+):(%d+):([%u]+):(.*)$")
+        local profName, rankStr, maxRankStr, classEn, idListStr = data:match("^([^:]+):(%d+):(%d+):([^:]*):?(.*)$")
         if profName and idListStr then
             local normProf = YellowPages:NormalizeProfessionName(profName) or profName
             YellowPagesDB.members[cleanSender] = YellowPagesDB.members[cleanSender] or {
-                class = classEn or "WARRIOR",
+                class = (classEn and classEn ~= "") and classEn or "WARRIOR",
                 online = true,
                 lastSeen = time(),
                 professions = {}
             }
             local m = YellowPagesDB.members[cleanSender]
-            m.class = classEn or m.class
+            if classEn and classEn ~= "" then m.class = classEn end
             m.online = true
             m.lastSeen = time()
             m.professions = m.professions or {}
@@ -567,9 +589,24 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
 
             for idStr in idListStr:gmatch("(%d+)") do
                 local id = tonumber(idStr)
-                if id and not knownSet[id] then
-                    knownSet[id] = true
-                    table.insert(p.recipes, id)
+                if id then
+                    -- Falls das Rezept noch nicht in der Rezept-DB ist (z.B. REC noch unterwegs oder ausgelassen),
+                    -- sofort einen Eintrag anlegen, damit es in der Liste aufgeführt wird!
+                    if not YellowPagesDB.recipes[id] then
+                        local itemName, itemLink = YellowPages:GetItemInfoSafe(id)
+                        YellowPages:RegisterRecipe({
+                            id = id,
+                            name = itemName or (L["RECIPE_FALLBACK"] .. " #" .. id),
+                            prof = normProf,
+                            itemLink = itemLink,
+                            itemID = id < 900000 and id or 0
+                        })
+                    end
+
+                    if not knownSet[id] then
+                        knownSet[id] = true
+                        table.insert(p.recipes, id)
+                    end
                 end
             end
 

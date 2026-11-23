@@ -475,11 +475,13 @@ function YellowPages:CreateMainFrame()
     local syncBtn = Theme:CreateButton(topPanel, 68, 22, L["BTN_SYNC"])
     syncBtn:SetPoint("RIGHT", -10, 0)
     syncBtn:SetScript("OnClick", function()
-        YellowPages:BroadcastHello()
-        if YellowPages.BroadcastAllMyProfessions then
+        if YellowPages.RequestGuildSync then
+            YellowPages:RequestGuildSync()
+        else
+            YellowPages:BroadcastHello()
             YellowPages:BroadcastAllMyProfessions()
+            YellowPages:Print(L["MSG_SYNC_SENT"])
         end
-        YellowPages:Print(L["MSG_SYNC_SENT"])
     end)
 
     local scanBtn = Theme:CreateButton(topPanel, 108, 22, L["BTN_SCAN_PROF"])

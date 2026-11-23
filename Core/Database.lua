@@ -119,6 +119,25 @@ function YellowPages:IsSelf(memberName)
     return false
 end
 
+-- Liefert die eigenen Mitglieder-Daten aus der Datenbank (sucht robust über fullName, UnitName und IsSelf)
+function YellowPages:GetMyMemberData()
+    if not YellowPagesDB or not YellowPagesDB.members then return nil, nil end
+    local myFullName = self:GetPlayerFullName("player")
+    if myFullName and YellowPagesDB.members[myFullName] then
+        return YellowPagesDB.members[myFullName], myFullName
+    end
+    local firstOnly = UnitName and UnitName("player")
+    if firstOnly and YellowPagesDB.members[firstOnly] then
+        return YellowPagesDB.members[firstOnly], firstOnly
+    end
+    for memberName, memberData in pairs(YellowPagesDB.members) do
+        if self:IsSelf(memberName) then
+            return memberData, memberName
+        end
+    end
+    return nil, myFullName
+end
+
 -- Ermittelt und ergänzt dynamisch Qualitätsstufe (Rarity), lokalisierten Namen und Stufe (Level)
 function YellowPages:ResolveRecipeMetadata(recipeData)
     if not recipeData then return 1, 0 end

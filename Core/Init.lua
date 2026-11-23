@@ -7,7 +7,7 @@
 YellowPages = YellowPages or {}
 local L = YellowPages.L
 YellowPages.Title = "|cffffd100Yellow-Pages|r"
-YellowPages.Version = "1.0.1"
+YellowPages.Version = "1.0.2"
 YellowPages.AddonPrefix = "YELLOWPAGES"
 YellowPages.IncomingOrders = YellowPages.IncomingOrders or {}
 YellowPages.IncomingOffers = YellowPages.IncomingOffers or {}
@@ -700,9 +700,13 @@ SlashCmdList["YELLOWPAGES"] = function(msg)
         YellowPages:Print(L["MSG_DB_RESET"])
         if YellowPages.RefreshUI then YellowPages:RefreshUI() end
     elseif cmd == "sync" then
-        YellowPages:BroadcastHello()
-        YellowPages:BroadcastAllMyProfessions()
-        YellowPages:Print(L["MSG_SYNC_SENT"])
+        if YellowPages.RequestGuildSync then
+            YellowPages:RequestGuildSync()
+        else
+            YellowPages:BroadcastHello()
+            YellowPages:BroadcastAllMyProfessions()
+            YellowPages:Print(L["MSG_SYNC_SENT"])
+        end
     else
         YellowPages:ToggleUI()
     end

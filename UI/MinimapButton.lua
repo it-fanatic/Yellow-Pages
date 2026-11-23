@@ -67,11 +67,13 @@ function YellowPages:InitMinimap()
     btn:SetScript("OnClick", function(self, button)
         if button == "LeftButton" then
             if IsShiftKeyDown() then
-                YellowPages:BroadcastHello()
-                if YellowPages.BroadcastAllMyProfessions then
+                if YellowPages.RequestGuildSync then
+                    YellowPages:RequestGuildSync()
+                else
+                    YellowPages:BroadcastHello()
                     YellowPages:BroadcastAllMyProfessions()
+                    YellowPages:Print(L["MSG_SYNC_SENT"])
                 end
-                YellowPages:Print(L["MSG_SYNC_SENT"])
             else
                 YellowPages:ToggleUI()
             end
