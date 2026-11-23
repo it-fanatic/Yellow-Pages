@@ -312,33 +312,6 @@ function YellowPages:RepairAndConsolidateSelfData()
         targetMember.professions[item.oldKey] = nil
         self:RegisterMemberProfession(myFullName, myClass, item.normKey, item.data.rank, item.data.maxRank, item.data.recipes)
     end
-
-    -- 3. Verwaiste Rezepte in YellowPagesDB.recipes (die durch die frühere Vorname->Nachname-Migration ihren Handwerker-Link verloren haben)
-    -- automatisch wieder mit dem eigenen Charakter verknüpfen, sofern der eigene Charakter diesen Beruf besitzt!
-    local assignedAnywhere = {}
-    for _, mData in pairs(YellowPagesDB.members) do
-        if mData.professions then
-            for _, pData in pairs(mData.professions) do
-                if pData.recipes then
-                    for _, rID in ipairs(pData.recipes) do
-                        assignedAnywhere[rID] = true
-                    end
-                end
-            end
-        end
-    end
-
-    for recipeID, rec in pairs(YellowPagesDB.recipes) do
-        if not assignedAnywhere[recipeID] and rec and rec.prof then
-            local normProf = self:NormalizeProfessionName(rec.prof) or rec.prof
-            local myProf = targetMember.professions[normProf]
-            if myProf then
-                myProf.recipes = myProf.recipes or {}
-                table.insert(myProf.recipes, recipeID)
-                assignedAnywhere[recipeID] = true
-            end
-        end
-    end
 end
 
 -- Registriert ein Rezept in der globalen Rezept-Datenbank
