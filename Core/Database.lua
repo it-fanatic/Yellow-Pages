@@ -757,6 +757,46 @@ function YellowPages:LoadRecipeCatalog()
             end
         end
     end
+
+    -- Auch Sammelberufe (Kräuterkunde, Bergbau, Kürschnerei) als Basis-Katalog vorladen,
+    -- damit Bergbau & Co. auch ohne aktiven Sammler in der Gilde nicht leer sind!
+    for catKey, entries in pairs(GATHERING_CATALOG) do
+        local normProf = L[catKey]
+        for _, res in ipairs(entries) do
+            local recID = 900000 + res.itemID
+            if not YellowPagesDB.recipes[recID] then
+                local locName = self:GetItemNameSafe(res.itemID)
+                if not locName or locName:find("^Item #") then
+                    locName = res.name
+                end
+                local icon = self:GetItemIconSafe(res.itemID)
+                local _, itemLink = self:GetItemInfoSafe(res.itemID)
+
+                self:RegisterRecipe({
+                    id = recID,
+                    name = locName,
+                    prof = normProf,
+                    icon = icon,
+                    itemLink = itemLink,
+                    itemID = res.itemID,
+                    level = res.skill,
+                    gatherSkill = res.skill,
+                    minMade = 1,
+                    maxMade = 1,
+                    reagents = {
+                        {
+                            itemID = res.itemID,
+                            name = locName,
+                            count = 1,
+                            icon = icon,
+                        }
+                    }
+                })
+                loaded = loaded + 1
+            end
+        end
+    end
+
     return loaded
 end
 
