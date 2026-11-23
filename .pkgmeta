@@ -11,3 +11,4 @@ ignore:
   - YellowPages.zip
   - Yellow-Pages.toc
   - icon.png
+  - yellow_pages_*.png

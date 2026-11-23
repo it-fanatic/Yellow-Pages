@@ -37,8 +37,11 @@ function YellowPages:InitMinimap()
     local function UpdatePosition(angle)
         local rad = math.rad(angle or 195)
         local cos, sin = math.cos(rad), math.sin(rad)
-        local x = cos * 80
-        local y = sin * 80
+        local w = (Minimap and Minimap:GetWidth() and Minimap:GetWidth() > 0) and Minimap:GetWidth() or 190
+        local radius = (w / 2) + 10
+        if radius < 80 then radius = 80 end
+        local x = cos * radius
+        local y = sin * radius
         btn:ClearAllPoints()
         btn:SetPoint("CENTER", Minimap, "CENTER", x, y)
     end
