@@ -7,7 +7,7 @@
 YellowPages = YellowPages or {}
 local L = YellowPages.L
 YellowPages.Title = "|cffffd100Yellow-Pages|r"
-YellowPages.Version = "1.0.2"
+YellowPages.Version = "1.0.3"
 YellowPages.AddonPrefix = "YELLOWPAGES"
 YellowPages.IncomingOrders = YellowPages.IncomingOrders or {}
 YellowPages.IncomingOffers = YellowPages.IncomingOffers or {}

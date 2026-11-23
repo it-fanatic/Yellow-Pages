@@ -172,22 +172,38 @@ function YellowPages:BroadcastProfessionData(profName)
 end
 
 function YellowPages:BroadcastAllMyProfessions()
-    if not self:IsInGuild() then return end
+    if not self:IsInGuild() then return 0, 0 end
     local myData = self:GetMyMemberData()
-    if not myData or not myData.professions then return end
+    if not myData or not myData.professions then return 0, 0 end
 
-    for profName, _ in pairs(myData.professions) do
-        self:BroadcastProfessionData(profName)
+    local profCount = 0
+    local recCount = 0
+    for profName, pData in pairs(myData.professions) do
+        local count = pData.recipes and #pData.recipes or 0
+        if count > 0 then
+            profCount = profCount + 1
+            recCount = recCount + count
+            self:BroadcastProfessionData(profName)
+        end
     end
+    return profCount, recCount
 end
 
 -- Fordert eine bidirektionale Synchronisation mit der gesamten Gilde an (sendet eigene Daten und bittet alle Online-Mitglieder um ihre Daten)
 function YellowPages:RequestGuildSync()
-    if not self:IsInGuild() then return end
+    if not self:IsInGuild() then
+        self:Print(L["NO_GUILD"])
+        return
+    end
     self:BroadcastHello()
-    self:BroadcastAllMyProfessions()
+    local profCount, recCount = self:BroadcastAllMyProfessions()
     self:SendAddonMsg("REQ_SYNC", "GUILD")
-    self:Print(L["MSG_SYNC_SENT"])
+
+    if profCount == 0 or recCount == 0 then
+        self:Print(L["MSG_SYNC_NO_RECIPES"])
+    else
+        self:Print(string.format(L["MSG_SYNC_STATS"], profCount, recCount))
+    end
 end
 
 -- Schritt 1: Anfragender schickt Anfrage + seine vorhandenen/fehlenden Mats an den Handwerker
@@ -587,6 +603,7 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
             local knownSet = {}
             for _, id in ipairs(p.recipes) do knownSet[id] = true end
 
+            local addedCount = 0
             for idStr in idListStr:gmatch("(%d+)") do
                 local id = tonumber(idStr)
                 if id then
@@ -606,8 +623,13 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
                     if not knownSet[id] then
                         knownSet[id] = true
                         table.insert(p.recipes, id)
+                        addedCount = addedCount + 1
                     end
                 end
+            end
+
+            if addedCount > 0 then
+                YellowPages:Print(string.format(L["MSG_RECEIVED_PROF_DATA"], cleanSender, normProf, #p.recipes))
             end
 
             if YellowPages.RefreshUI then
