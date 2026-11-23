@@ -7,7 +7,7 @@
 YellowPages = YellowPages or {}
 local L = YellowPages.L
 YellowPages.Title = "|cffffd100Yellow-Pages|r"
-YellowPages.Version = "1.0.4"
+YellowPages.Version = "1.0.5"
 YellowPages.AddonPrefix = "YELLOWPAGES"
 YellowPages.IncomingOrders = YellowPages.IncomingOrders or {}
 YellowPages.IncomingOffers = YellowPages.IncomingOffers or {}
@@ -617,6 +617,9 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         RegisterAddonPrefixSafe()
+        if YellowPages.LoadRecipeCatalog then
+            YellowPages:LoadRecipeCatalog()
+        end
         if YellowPages.UpdateGuildMembersStatus then
             YellowPages:UpdateGuildMembersStatus()
         end

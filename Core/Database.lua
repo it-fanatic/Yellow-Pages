@@ -575,7 +575,7 @@ function YellowPages:GetRecipeInfo(recipeID)
     return rec
 end
 
-function YellowPages:GetFilteredRecipes(profFilter, searchFilter, onlineOnly, sortBy, qualityFilter)
+function YellowPages:GetFilteredRecipes(profFilter, searchFilter, onlineOnly, sortBy, qualityFilter, availableOnly)
     local results = {}
     if not YellowPagesDB or not YellowPagesDB.recipes then return results end
 
@@ -616,7 +616,7 @@ function YellowPages:GetFilteredRecipes(profFilter, searchFilter, onlineOnly, so
                 end
             end
 
-            if not onlineOnly or hasOnline then
+            if (not onlineOnly or hasOnline) and (not availableOnly or #crafters > 0) then
                 table.insert(results, {
                     recipe = data,
                     quality = quality,
@@ -703,11 +703,69 @@ function YellowPages:UpdateGuildMembersStatus()
     self:RepairAndConsolidateSelfData()
 end
 
+function YellowPages:LoadRecipeCatalog()
+    if not self.RecipeCatalog then return 0 end
+    YellowPagesDB = YellowPagesDB or {}
+    YellowPagesDB.recipes = YellowPagesDB.recipes or {}
+
+    local loaded = 0
+    for recipeID, cat in pairs(self.RecipeCatalog) do
+        local idNum = tonumber(recipeID)
+        if idNum and type(cat) == "table" then
+            local existing = YellowPagesDB.recipes[idNum]
+            local isFallback = existing and existing.name and existing.name:find("^" .. (L["RECIPE_FALLBACK"] or "Rezept"):gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1") .. " #")
+            if not existing or isFallback or not existing.reagents or #existing.reagents == 0 then
+                local profName = (cat.prof and L[cat.prof]) or self:NormalizeProfessionName(cat.prof) or cat.prof or L["GENERAL"]
+                local itemID = cat.itemID or (existing and existing.itemID) or 0
+                local itemName, itemLink = nil, (existing and existing.itemLink)
+                if itemID > 0 and (not itemLink or itemLink == "") then
+                    itemName, itemLink = self:GetItemInfoSafe(itemID)
+                end
+
+                local reagents = {}
+                if type(cat.reagents) == "table" then
+                    for _, m in ipairs(cat.reagents) do
+                        local mID = m.itemID or m[1]
+                        local mCount = m.count or m[2] or 1
+                        if mID and mID > 0 then
+                            table.insert(reagents, {
+                                itemID = mID,
+                                name = self:GetItemNameSafe(mID),
+                                count = mCount,
+                                icon = self:GetItemIconSafe(mID)
+                            })
+                        end
+                    end
+                end
+
+                local finalName = cat.name or itemName or (existing and not isFallback and existing.name) or (L["RECIPE_FALLBACK"] .. " #" .. idNum)
+                local catIcon = cat.icon and (tonumber(cat.icon) or cat.icon) or nil
+                self:RegisterRecipe({
+                    id = idNum,
+                    name = finalName,
+                    prof = profName,
+                    icon = catIcon or (existing and existing.icon) or (itemID > 0 and self:GetItemIconSafe(itemID)) or "Interface\\Icons\\INV_Misc_QuestionMark",
+                    itemLink = itemLink,
+                    itemID = itemID,
+                    quality = cat.quality or (existing and existing.quality),
+                    level = cat.level or (existing and existing.level),
+                    minMade = cat.minMade or (existing and existing.minMade) or 1,
+                    maxMade = cat.maxMade or (existing and existing.maxMade) or 1,
+                    reagents = (#reagents > 0) and reagents or (existing and existing.reagents) or {}
+                })
+                loaded = loaded + 1
+            end
+        end
+    end
+    return loaded
+end
+
 function YellowPages:ResetDatabase()
     YellowPagesDB = YellowPagesDB or {}
     YellowPagesDB.members = {}
     YellowPagesDB.recipes = {}
     self:Print(L["MSG_DB_RESET"])
+    self:LoadRecipeCatalog()
     if self.ScanPlayerSkillLines then
         self:ScanPlayerSkillLines(false)
     end

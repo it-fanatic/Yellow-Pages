@@ -161,10 +161,11 @@ function YellowPages:BroadcastProfessionData(profName, sendMode)
     end
 
     -- 2. SCHRITT: Detaillierte Rezept-Daten (Namen, Output-Items & Reagenzien) im Hintergrund nachsenden.
-    -- Auch Rezepte ohne Reagenzien senden (wichtig für Verzauberkunst / Spell-IDs wie #1245320).
+    -- Rezepte, die bereits im statischen Katalog (Data/RecipeCatalog.lua) stehen, werden übersprungen (0 Chat-Traffic!).
     if not sendMode or sendMode == "REC" then
         for _, recipeID in ipairs(pData.recipes) do
-            local r = self:GetRecipeInfo(recipeID)
+            local inCatalog = self.RecipeCatalog and self.RecipeCatalog[recipeID]
+            local r = not inCatalog and self:GetRecipeInfo(recipeID)
             if r then
                 local matParts = {}
                 if r.reagents then

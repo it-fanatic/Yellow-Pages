@@ -1,0 +1,11 @@
+## Interface: 16001
+## Interface-Retail: 110007, 110100, 110200
+## Interface-Classic: 11505, 11506
+## Title: |cffffd100Yellow-Pages|r [DEV Exporter]
+## Notes: Developer tool to scan ALL recipes (learned & unlearned) per profession and export Lua code for Data\RecipeCatalog.lua.
+## Author: Mirulas
+## Version: 1.0.0
+## OptionalDeps: YellowPages
+## SavedVariables: YellowPagesDevDB
+
+DevExporter.lua

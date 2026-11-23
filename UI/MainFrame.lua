@@ -17,6 +17,7 @@ local currentQuantity = 1
 local selectedProfession = "ALL"
 local currentSearchQuery = ""
 local onlyOnlineCrafters = false
+local onlyAvailableCrafters = false
 local currentSortBy = "NAME_ASC"
 local selectedQualityFilter = "ALL"
 local showingInfoPage = false
@@ -423,7 +424,7 @@ function YellowPages:CreateMainFrame()
 
     -- Suchfeld
     local searchBox = CreateFrame("EditBox", "YellowPagesSearchBox", topPanel, "InputBoxTemplate")
-    searchBox:SetSize(180, 22)
+    searchBox:SetSize(140, 22)
     searchBox:SetPoint("LEFT", 14, 0)
     searchBox:SetAutoFocus(false)
     searchBox:SetText("")
@@ -447,8 +448,8 @@ function YellowPages:CreateMainFrame()
     searchBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 
     -- Sortier- & Qualitäts-Button
-    local sortBtn = Theme:CreateButton(topPanel, 128, 22, GetSortShortLabel())
-    sortBtn:SetPoint("LEFT", searchBox, "RIGHT", 8, 0)
+    local sortBtn = Theme:CreateButton(topPanel, 106, 22, GetSortShortLabel())
+    sortBtn:SetPoint("LEFT", searchBox, "RIGHT", 6, 0)
     mainFrame.sortBtn = sortBtn
 
     sortBtn:SetScript("OnClick", function(self)
@@ -460,7 +461,7 @@ function YellowPages:CreateMainFrame()
 
     -- Checkbox: Nur Online-Crafter
     local onlineCheck = CreateFrame("CheckButton", "YellowPagesOnlineCheck", topPanel, "UICheckButtonTemplate")
-    onlineCheck:SetPoint("LEFT", sortBtn, "RIGHT", 10, 0)
+    onlineCheck:SetPoint("LEFT", sortBtn, "RIGHT", 6, 0)
     onlineCheck:SetSize(22, 22)
     local checkText = onlineCheck:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     checkText:SetPoint("LEFT", onlineCheck, "RIGHT", 2, 0)
@@ -471,8 +472,21 @@ function YellowPages:CreateMainFrame()
         YellowPages:RefreshRecipeList()
     end)
 
+    -- Checkbox: Nur verfügbare (gelernte) Rezepte (blendet 0-Handwerker-Rezepte aus)
+    local availableCheck = CreateFrame("CheckButton", "YellowPagesAvailableCheck", topPanel, "UICheckButtonTemplate")
+    availableCheck:SetPoint("LEFT", checkText, "RIGHT", 8, 0)
+    availableCheck:SetSize(22, 22)
+    local availText = availableCheck:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    availText:SetPoint("LEFT", availableCheck, "RIGHT", 2, 0)
+    availText:SetText(L["AVAILABLE_ONLY"])
+    availText:SetTextColor(unpack(Theme.FPT.text))
+    availableCheck:SetScript("OnClick", function(self)
+        onlyAvailableCrafters = not not self:GetChecked()
+        YellowPages:RefreshRecipeList()
+    end)
+
     -- Rechts im Top-Panel: Beruf scannen & Sync
-    local syncBtn = Theme:CreateButton(topPanel, 68, 22, L["BTN_SYNC"])
+    local syncBtn = Theme:CreateButton(topPanel, 64, 22, L["BTN_SYNC"])
     syncBtn:SetPoint("RIGHT", -10, 0)
     syncBtn:SetScript("OnClick", function()
         if YellowPages.RequestGuildSync then
@@ -484,7 +498,7 @@ function YellowPages:CreateMainFrame()
         end
     end)
 
-    local scanBtn = Theme:CreateButton(topPanel, 108, 22, L["BTN_SCAN_PROF"])
+    local scanBtn = Theme:CreateButton(topPanel, 104, 22, L["BTN_SCAN_PROF"])
     scanBtn:SetPoint("RIGHT", syncBtn, "LEFT", -6, 0)
     scanBtn:SetScript("OnClick", function()
         YellowPages:ScanCurrentTradeSkill(true)
@@ -858,7 +872,8 @@ function YellowPages:RefreshRecipeList()
         currentSearchQuery,
         onlyOnlineCrafters,
         currentSortBy,
-        selectedQualityFilter
+        selectedQualityFilter,
+        onlyAvailableCrafters
     )
 
     if mainFrame.statusText then
@@ -967,21 +982,44 @@ function YellowPages:RefreshRecipeList()
             row.bg:SetColorTexture(0.94, 0.76, 0.54, (i % 2 == 1) and 0.035 or 0)
         end
 
-        if item.level and item.level > 0 then
-            row.lvlText:SetText(tostring(item.level))
-            row.lvlText:SetTextColor(unpack(isSelected and Theme.FPT.current or Theme.FPT.muted))
+        local isUnlearned = (item.crafterCount == 0)
+        if row.icon.SetDesaturated then
+            row.icon:SetDesaturated(isUnlearned)
+        end
+        if isUnlearned then
+            row.icon:SetVertexColor(0.45, 0.45, 0.45)
         else
-            row.lvlText:SetText("—")
-            row.lvlText:SetTextColor(unpack(Theme.FPT.muted))
+            row.icon:SetVertexColor(1, 1, 1)
         end
 
-        row.nameText:SetText(Theme:GetQualityColoredText(rData.name, item.quality))
-        row.profText:SetText(rData.prof or L["PROFESSION_FALLBACK"])
-
-        if item.hasOnlineCrafter then
-            row.badge:SetText("|cff8fdcad" .. string.format(L["CRAFTER_COUNT_FMT"], item.crafterCount) .. "|r")
+        if item.level and item.level > 0 then
+            row.lvlText:SetText(tostring(item.level))
+            if isUnlearned and not isSelected then
+                row.lvlText:SetTextColor(0.45, 0.45, 0.45)
+            else
+                row.lvlText:SetTextColor(unpack(isSelected and Theme.FPT.current or Theme.FPT.muted))
+            end
         else
-            row.badge:SetText("|cffc2b091" .. string.format(L["CRAFTER_COUNT_FMT"], item.crafterCount) .. "|r")
+            row.lvlText:SetText("—")
+            if isUnlearned and not isSelected then
+                row.lvlText:SetTextColor(0.45, 0.45, 0.45)
+            else
+                row.lvlText:SetTextColor(unpack(Theme.FPT.muted))
+            end
+        end
+
+        if isUnlearned then
+            row.nameText:SetText("|cff7a7a7a" .. (rData.name or L["UNKNOWN"]) .. "|r")
+            row.profText:SetText("|cff666666" .. (rData.prof or L["PROFESSION_FALLBACK"]) .. "|r")
+            row.badge:SetText("|cff6e6e6e" .. string.format(L["CRAFTER_COUNT_FMT"], 0) .. "|r")
+        else
+            row.nameText:SetText(Theme:GetQualityColoredText(rData.name, item.quality))
+            row.profText:SetText(rData.prof or L["PROFESSION_FALLBACK"])
+            if item.hasOnlineCrafter then
+                row.badge:SetText("|cff8fdcad" .. string.format(L["CRAFTER_COUNT_FMT"], item.crafterCount) .. "|r")
+            else
+                row.badge:SetText("|cffc2b091" .. string.format(L["CRAFTER_COUNT_FMT"], item.crafterCount) .. "|r")
+            end
         end
 
         row:Show()

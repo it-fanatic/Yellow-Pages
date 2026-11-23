@@ -12,3 +12,4 @@ ignore:
   - Yellow-Pages.toc
   - icon.png
   - yellow_pages_*.png
+  - DevTools
