@@ -52,8 +52,10 @@ local enUS = {
     INFO_SEC4_TITLE         = "4. Shopping List (AH & Vendor) & Crafter Order Queue",
     INFO_SEC4_TEXT          = "• Confirming a crafter's offer automatically adds any missing materials to your Shopping List (coin tab on the right). It pops up automatically at the Auction House (1-click search) and at Vendors (1-click direct buy)!\n• The crafter receives the confirmed order in their Order Queue (scroll tab on the right), which automatically ticks off as 'Done' once the item is crafted.",
     INFO_SEC5_TITLE         = "5. Chat Commands",
-    INFO_SEC5_TEXT          = "|cffffd100/yp|r — Open/close main window   |   |cffffd100/yp scan|r — Scan open profession   |   |cffffd100/yp sync|r — Sync with guild\n|cffffd100/yp shop|r — Toggle Shopping List   |   |cffffd100/yp orders|r — Toggle Order Queue   |   |cffffd100/yp info|r — Open this Info page",
+    INFO_SEC5_TEXT          = "|cffffd100/yp|r — Open/close main window   |   |cffffd100/yp scan|r — Scan open profession   |   |cffffd100/yp sync|r — Sync with guild\n|cffffd100/yp status|r — Show database status   |   |cffffd100/yp reset|r — Reset database   |   |cffffd100/yp info|r — Open this Info page",
     BTN_BACK_TO_RECIPES     = "Back to Recipes",
+    BTN_RESET_DB            = "Reset Database",
+    CONFIRM_RESET_DB        = "Are you sure you want to reset the local Yellow-Pages database?\n\nAll cached recipes and members will be cleared. Your own professions will be rescanned automatically.",
 
     -- Sort & Quality Filter
     SORT_MENU_TITLE         = "Sort Recipes",
@@ -238,8 +240,10 @@ local deDE = {
     INFO_SEC4_TITLE         = "4. Einkaufsliste (AH & Händler) & Auftragsliste",
     INFO_SEC4_TEXT          = "• Sobald du im Chat auf [Yellow-Pages: Auftrag bestätigen] klickst, landen fehlende Materialien automatisch in deiner Einkaufsliste (Münz-Button rechts). Diese öffnet sich automatisch am Auktionshaus (1-Klick-Suche) und bei Händlern (1-Klick-Direktkauf)!\n• Beim Handwerker landet der bestätigte Auftrag in der Auftragsliste (Schriftrollen-Button rechts) und wird beim Herstellen des Gegenstands automatisch als „Erledigt“ abgehakt.",
     INFO_SEC5_TITLE         = "5. Chat-Befehle",
-    INFO_SEC5_TEXT          = "|cffffd100/yp|r — Hauptfenster öffnen/schließen   |   |cffffd100/yp scan|r — Beruf scannen   |   |cffffd100/yp sync|r — Gilden-Sync\n|cffffd100/yp shop|r — Einkaufsliste öffnen   |   |cffffd100/yp orders|r — Auftragsliste öffnen   |   |cffffd100/yp info|r — Diese Info-Seite öffnen",
+    INFO_SEC5_TEXT          = "|cffffd100/yp|r — Hauptfenster öffnen/schließen   |   |cffffd100/yp scan|r — Beruf scannen   |   |cffffd100/yp sync|r — Gilden-Sync\n|cffffd100/yp status|r — Datenbank-Status anzeigen   |   |cffffd100/yp reset|r — Datenbank leeren   |   |cffffd100/yp info|r — Diese Info-Seite öffnen",
     BTN_BACK_TO_RECIPES     = "Zurück zu den Rezepten",
+    BTN_RESET_DB            = "Datenbank zurücksetzen",
+    CONFIRM_RESET_DB        = "Möchtest du die lokale Yellow-Pages Datenbank wirklich leeren?\n\nAlle zwischengespeicherten Gilden-Rezepte und Mitglieder werden zurückgesetzt. Deine eigenen Berufe werden danach automatisch neu erfasst.",
 
     -- Sortierung & Qualitätsfilter
     SORT_MENU_TITLE         = "Rezepte sortieren",

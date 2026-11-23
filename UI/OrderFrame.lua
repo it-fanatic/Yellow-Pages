@@ -444,6 +444,7 @@ function YellowPages:CreateOrderQueueFrame()
     btnClose:SetPoint("BOTTOMRIGHT", -14, 12)
     btnClose:SetScript("OnClick", function() queueFrame:Hide() end)
 
+    queueFrame:Hide()
     return queueFrame
 end
 
@@ -645,6 +646,7 @@ function YellowPages:CreateShoppingListFrame()
         if YellowPages.RefreshUI then YellowPages:RefreshUI() end
     end)
 
+    shoppingFrame:Hide()
     return shoppingFrame
 end
 

@@ -23,13 +23,22 @@ local function ProcessSendQueue()
     if item then
         YellowPages:SendAddonMsgDirect(item.msg, item.channel, item.target)
     end
-    C_Timer.After(0.15, ProcessSendQueue)
+    -- Adaptives Throttling: Erste Pakete (PLISTs) schnell senden, große Hintergrund-Batches (RECs)
+    -- schonend drosseln, damit der WoW-Server keine Chat-Nachrichten verwirft!
+    local nextDelay = (#sendQueue > 8) and 0.45 or 0.12
+    C_Timer.After(nextDelay, ProcessSendQueue)
 end
 
 function YellowPages:QueueAddonMsg(msg, targetChannel, targetPlayer)
+    local ch = targetChannel or "GUILD"
+    for _, existing in ipairs(sendQueue) do
+        if existing.msg == msg and existing.channel == ch and existing.target == targetPlayer then
+            return
+        end
+    end
     table.insert(sendQueue, {
         msg = msg,
-        channel = targetChannel or "GUILD",
+        channel = ch,
         target = targetPlayer
     })
     if not isQueueRunning then
@@ -116,7 +125,8 @@ function YellowPages:BroadcastHello()
 end
 
 -- Sendet einen Beruf inklusive aller Rezepte und Reagenzien an die Gilde
-function YellowPages:BroadcastProfessionData(profName)
+-- sendMode: "PLIST" (nur Rezeptliste), "REC" (nur Detaildaten/Namen) oder nil (beides: erst PLIST, dann REC)
+function YellowPages:BroadcastProfessionData(profName, sendMode)
     if not self:IsInGuild() or not profName then return end
     local myData, playerName = self:GetMyMemberData()
     local playerClass = UnitClass and select(2, UnitClass("player")) or "WARRIOR"
@@ -126,48 +136,57 @@ function YellowPages:BroadcastProfessionData(profName)
     local pData = myData.professions[normTargetProf] or myData.professions[profName]
     if not pData or not pData.recipes or #pData.recipes == 0 then return end
 
-    for _, recipeID in ipairs(pData.recipes) do
-        local r = self:GetRecipeInfo(recipeID)
-        if r then
-            local matParts = {}
-            if r.reagents then
-                for _, m in ipairs(r.reagents) do
-                    if m.itemID and m.itemID > 0 then
-                        table.insert(matParts, string.format("%d=%d", m.itemID, m.count or 1))
+    -- 1. SCHRITT: Vollständige Rezept-Liste (PLIST) senden!
+    -- Da PLIST extrem kompakt ist (nur 1-3 Chat-Pakete), kommt sie garantiert
+    -- und ohne Chat-Drosselung (Throttle) sofort bei allen Gildenmitgliedern an!
+    if not sendMode or sendMode == "PLIST" then
+        local chunk = {}
+        local chunkLen = 0
+        local header = string.format("PLIST:%s:%d:%d:%s:", normTargetProf, pData.rank or 0, pData.maxRank or 300, playerClass)
+
+        for _, recipeID in ipairs(pData.recipes) do
+            local idStr = tostring(recipeID)
+            if #header + chunkLen + #idStr + 1 > 240 then
+                self:QueueAddonMsg(header .. table.concat(chunk, ","), "GUILD")
+                chunk = {}
+                chunkLen = 0
+            end
+            table.insert(chunk, idStr)
+            chunkLen = chunkLen + #idStr + 1
+        end
+
+        if #chunk > 0 then
+            self:QueueAddonMsg(header .. table.concat(chunk, ","), "GUILD")
+        end
+    end
+
+    -- 2. SCHRITT: Detaillierte Rezept-Daten (Namen, Output-Items & Reagenzien) im Hintergrund nachsenden.
+    -- Auch Rezepte ohne Reagenzien senden (wichtig für Verzauberkunst / Spell-IDs wie #1245320).
+    if not sendMode or sendMode == "REC" then
+        for _, recipeID in ipairs(pData.recipes) do
+            local r = self:GetRecipeInfo(recipeID)
+            if r then
+                local matParts = {}
+                if r.reagents then
+                    for _, m in ipairs(r.reagents) do
+                        if m.itemID and m.itemID > 0 then
+                            table.insert(matParts, string.format("%d=%d", m.itemID, m.count or 1))
+                        end
                     end
                 end
-            end
-            local safeName = (r.name or L["RECIPE_FALLBACK"]):gsub("[:;|]", " "):sub(1, 48)
-            local recMsg = string.format("REC:%d:%s:%d:%s:%s",
-                recipeID,
-                normTargetProf,
-                r.itemID or 0,
-                safeName,
-                table.concat(matParts, ",")
-            )
-            if #recMsg <= 250 then
-                self:QueueAddonMsg(recMsg, "GUILD")
+                local safeName = (r.name or L["RECIPE_FALLBACK"]):gsub("[:;|]", " "):sub(1, 48)
+                local recMsg = string.format("REC:%d:%s:%d:%s:%s",
+                    recipeID,
+                    normTargetProf,
+                    r.itemID or 0,
+                    safeName,
+                    table.concat(matParts, ",")
+                )
+                if #recMsg <= 250 then
+                    self:QueueAddonMsg(recMsg, "GUILD")
+                end
             end
         end
-    end
-
-    local chunk = {}
-    local chunkLen = 0
-    local header = string.format("PLIST:%s:%d:%d:%s:", normTargetProf, pData.rank or 0, pData.maxRank or 300, playerClass)
-
-    for _, recipeID in ipairs(pData.recipes) do
-        local idStr = tostring(recipeID)
-        if #header + chunkLen + #idStr + 1 > 240 then
-            self:QueueAddonMsg(header .. table.concat(chunk, ","), "GUILD")
-            chunk = {}
-            chunkLen = 0
-        end
-        table.insert(chunk, idStr)
-        chunkLen = chunkLen + #idStr + 1
-    end
-
-    if #chunk > 0 then
-        self:QueueAddonMsg(header .. table.concat(chunk, ","), "GUILD")
     end
 end
 
@@ -176,6 +195,7 @@ function YellowPages:BroadcastAllMyProfessions()
     local myData = self:GetMyMemberData()
     if not myData or not myData.professions then return 0, 0 end
 
+    local profNames = {}
     local profCount = 0
     local recCount = 0
     for profName, pData in pairs(myData.professions) do
@@ -183,9 +203,19 @@ function YellowPages:BroadcastAllMyProfessions()
         if count > 0 then
             profCount = profCount + 1
             recCount = recCount + count
-            self:BroadcastProfessionData(profName)
+            table.insert(profNames, profName)
         end
     end
+
+    -- Erst ALLE PLISTs aller Berufe senden, damit sofort jeder Beruf & Handwerker da ist!
+    for _, profName in ipairs(profNames) do
+        self:BroadcastProfessionData(profName, "PLIST")
+    end
+    -- Danach ALLE Detail-RECs (Namen & Zutaten) schonend in die Hintergrund-Warteschlange legen
+    for _, profName in ipairs(profNames) do
+        self:BroadcastProfessionData(profName, "REC")
+    end
+
     return profCount, recCount
 end
 
@@ -197,7 +227,7 @@ function YellowPages:RequestGuildSync()
     end
     self:BroadcastHello()
     local profCount, recCount = self:BroadcastAllMyProfessions()
-    self:SendAddonMsg("REQ_SYNC", "GUILD")
+    self:SendAddonMsg("REQ_SYNC:ALL", "GUILD")
 
     if profCount == 0 or recCount == 0 then
         self:Print(L["MSG_SYNC_NO_RECIPES"])
@@ -472,12 +502,13 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
     if type(message) ~= "string" or type(sender) ~= "string" then return end
 
     local cleanSender = YellowPages:StripRealm(sender) or sender
-    local msgType, data = message:match("^([%a_]+):(.*)$")
-    if not msgType or not data then return end
+    local msgType, data = message:match("^([%a_]+):?(.*)$")
+    if not msgType then return end
+    data = data or ""
 
     -- Eigenes HELLO-Echo prüfen, um unseren vollständigen Namen mit Nachnamen zu lernen!
     if msgType == "HELLO" then
-        local senderGUID, senderClass, profListStr = data:match("^([^:]*):([%u]+):(.*)$")
+        local senderGUID, senderClass, profListStr = data:match("^([^:]*):([^:]+):(.*)$")
         local myGUID = UnitGUID and UnitGUID("player")
         if senderGUID and myGUID and senderGUID == myGUID then
             YellowPages:LearnOwnFullName(cleanSender)
@@ -492,9 +523,9 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
     YellowPagesDB.recipes = YellowPagesDB.recipes or {}
 
     if msgType == "HELLO" then
-        local _, senderClass, profListStr = data:match("^([^:]*):([%u]+):(.*)$")
+        local _, senderClass, profListStr = data:match("^([^:]*):([^:]+):(.*)$")
         if not senderClass then
-            senderClass, profListStr = data:match("^([%u]+):(.*)$")
+            senderClass, profListStr = data:match("^([^:]+):(.*)$")
         end
         senderClass = senderClass or "WARRIOR"
 
@@ -577,6 +608,16 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
                 itemID = outputItemID,
                 reagents = (#reagents > 0) and reagents or (existing and existing.reagents) or {}
             })
+
+            if YellowPages.RefreshUI and not YellowPages._recRefreshPending then
+                YellowPages._recRefreshPending = true
+                C_Timer.After(0.6, function()
+                    YellowPages._recRefreshPending = false
+                    if YellowPages.RefreshUI then
+                        YellowPages:RefreshUI()
+                    end
+                end)
+            end
         end
 
     elseif msgType == "PLIST" then
@@ -628,7 +669,7 @@ commFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, s
                 end
             end
 
-            if addedCount > 0 then
+            if addedCount > 0 or #p.recipes > 0 then
                 YellowPages:Print(string.format(L["MSG_RECEIVED_PROF_DATA"], cleanSender, normProf, #p.recipes))
             end
 

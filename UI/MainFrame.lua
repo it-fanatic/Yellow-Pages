@@ -576,8 +576,22 @@ function YellowPages:CreateMainFrame()
     YellowPages:BuildInfoPane(infoContainer)
     YellowPages:UpdateSideTabsAndHeader()
 
+    mainFrame:Hide()
     return mainFrame
 end
+
+StaticPopupDialogs["YELLOWPAGES_CONFIRM_RESET_DB"] = {
+    text = L["CONFIRM_RESET_DB"],
+    button1 = YES or "Yes",
+    button2 = NO or "No",
+    OnAccept = function()
+        YellowPages:ResetDatabase()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
 
 -- Baut die Info- & Anleitungs-Seite im "Forever Profession Trainer"-Look auf
 function YellowPages:BuildInfoPane(parent)
@@ -647,10 +661,16 @@ function YellowPages:BuildInfoPane(parent)
         prevAnchor = secBody
     end
 
-    local backBtn = Theme:CreateButton(parent, 190, 26, L["BTN_BACK_TO_RECIPES"])
-    backBtn:SetPoint("BOTTOM", 0, 16)
+    local backBtn = Theme:CreateButton(parent, 170, 26, L["BTN_BACK_TO_RECIPES"])
+    backBtn:SetPoint("BOTTOM", -95, 16)
     backBtn:SetScript("OnClick", function()
         YellowPages:SetInfoPageShown(false)
+    end)
+
+    local resetBtn = Theme:CreateButton(parent, 170, 26, L["BTN_RESET_DB"])
+    resetBtn:SetPoint("BOTTOM", 95, 16)
+    resetBtn:SetScript("OnClick", function()
+        StaticPopup_Show("YELLOWPAGES_CONFIRM_RESET_DB")
     end)
 end
 

@@ -702,3 +702,57 @@ function YellowPages:UpdateGuildMembersStatus()
 
     self:RepairAndConsolidateSelfData()
 end
+
+function YellowPages:ResetDatabase()
+    YellowPagesDB = YellowPagesDB or {}
+    YellowPagesDB.members = {}
+    YellowPagesDB.recipes = {}
+    self:Print(L["MSG_DB_RESET"])
+    if self.ScanPlayerSkillLines then
+        self:ScanPlayerSkillLines(false)
+    end
+    if self.ScanCurrentTradeSkill then
+        self:ScanCurrentTradeSkill(false)
+    end
+    if self.RefreshUI then
+        self:RefreshUI()
+    end
+end
+
+function YellowPages:PrintStatus()
+    local gName = self:GetGuildName() or L["NO_GUILD"]
+    local memberCount = 0
+    local recipeCount = 0
+
+    if YellowPagesDB and YellowPagesDB.members then
+        for _ in pairs(YellowPagesDB.members) do
+            memberCount = memberCount + 1
+        end
+    end
+    if YellowPagesDB and YellowPagesDB.recipes then
+        for _ in pairs(YellowPagesDB.recipes) do
+            recipeCount = recipeCount + 1
+        end
+    end
+
+    self:Print(string.format("|cffffd100Status:|r Gilde: |cffffffff%s|r | Mitglieder in DB: |cffffffff%d|r | Rezepte in DB: |cffffffff%d|r", gName, memberCount, recipeCount))
+
+    if YellowPagesDB and YellowPagesDB.members then
+        for mName, mData in pairs(YellowPagesDB.members) do
+            local isMe = self:IsSelf(mName)
+            local statusStr = (isMe or mData.online) and "|cff00ff00Online|r" or "|cff888888Offline|r"
+            local profsList = {}
+            if mData.professions then
+                for pName, pData in pairs(mData.professions) do
+                    local count = pData.recipes and #pData.recipes or 0
+                    table.insert(profsList, string.format("%s (%d/%d, %d Rezepte)", pName, pData.rank or 0, pData.maxRank or 300, count))
+                end
+            end
+            local profsStr = #profsList > 0 and table.concat(profsList, ", ") or "|cffff8080Keine Berufe erfasst|r"
+            local tag = isMe and " |cff00ccff(Du)|r" or ""
+            self:Print(string.format(" - |cffffd100%s%s|r [%s]: %s", mName, tag, statusStr, profsStr))
+        end
+    end
+end
+
+

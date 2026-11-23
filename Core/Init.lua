@@ -7,7 +7,7 @@
 YellowPages = YellowPages or {}
 local L = YellowPages.L
 YellowPages.Title = "|cffffd100Yellow-Pages|r"
-YellowPages.Version = "1.0.3"
+YellowPages.Version = "1.0.4"
 YellowPages.AddonPrefix = "YELLOWPAGES"
 YellowPages.IncomingOrders = YellowPages.IncomingOrders or {}
 YellowPages.IncomingOffers = YellowPages.IncomingOffers or {}
@@ -694,11 +694,12 @@ SlashCmdList["YELLOWPAGES"] = function(msg)
         if YellowPages.ToggleInfoPage then
             YellowPages:ToggleInfoPage()
         end
+    elseif cmd == "status" then
+        if YellowPages.PrintStatus then
+            YellowPages:PrintStatus()
+        end
     elseif cmd == "reset" then
-        YellowPagesDB.members = {}
-        YellowPagesDB.recipes = {}
-        YellowPages:Print(L["MSG_DB_RESET"])
-        if YellowPages.RefreshUI then YellowPages:RefreshUI() end
+        YellowPages:ResetDatabase()
     elseif cmd == "sync" then
         if YellowPages.RequestGuildSync then
             YellowPages:RequestGuildSync()
