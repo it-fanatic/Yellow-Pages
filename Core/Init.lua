@@ -7,7 +7,7 @@
 YellowPages = YellowPages or {}
 local L = YellowPages.L
 YellowPages.Title = "|cffffd100Yellow-Pages|r"
-YellowPages.Version = "1.0.9"
+YellowPages.Version = "1.0.10"
 YellowPages.AddonPrefix = "YELLOWPAGES"
 YellowPages.IncomingOrders = YellowPages.IncomingOrders or {}
 YellowPages.IncomingOffers = YellowPages.IncomingOffers or {}
@@ -152,8 +152,63 @@ function YellowPages:GetItemNameSafe(itemID)
     return "Item #" .. tostring(itemID)
 end
 
-function YellowPages:Print(msg)
-    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s: %s", self.Title, tostring(msg)))
+local YP_CHAT_TAB_NAME = "YP-Chat"
+
+function YellowPages:FindYPChatFrame()
+    local maxWin = NUM_CHAT_WINDOWS or 10
+    for i = 1, maxWin do
+        local name = GetChatWindowInfo and GetChatWindowInfo(i)
+        if name == YP_CHAT_TAB_NAME then
+            return _G["ChatFrame" .. i]
+        end
+    end
+    return nil
+end
+
+function YellowPages:FlashYPChatTab(ypChat)
+    ypChat = ypChat or self.ypChatFrame or self:FindYPChatFrame()
+    if not ypChat or ypChat == DEFAULT_CHAT_FRAME then return end
+    if SELECTED_CHAT_FRAME == ypChat then return end
+
+    if FCF_StartAlertFlash then
+        pcall(FCF_StartAlertFlash, ypChat)
+    else
+        local tab = _G[ypChat:GetName() .. "Tab"]
+        local flash = tab and (tab.glow or _G[tab:GetName() .. "Flash"])
+        if flash and UIFrameFlash then
+            pcall(UIFrameFlash, flash, 0.5, 0.5, 10, false, 0, 0)
+        end
+    end
+end
+
+function YellowPages:EnsureYPChatTab()
+    local cf = self:FindYPChatFrame()
+    if not cf and FCF_OpenNewWindow then
+        local ok, newFrame = pcall(FCF_OpenNewWindow, YP_CHAT_TAB_NAME)
+        if ok and newFrame then
+            cf = newFrame
+        end
+    end
+    if cf then
+        -- Nur Yellow-Pages-Meldungen & gefilterte Auftrags-Whispers (keine normalen Privat-Whispers!)
+        if ChatFrame_RemoveAllMessageGroups then pcall(ChatFrame_RemoveAllMessageGroups, cf) end
+        if ChatFrame_RemoveAllChannels then pcall(ChatFrame_RemoveAllChannels, cf) end
+        self.ypChatFrame = cf
+        return cf
+    end
+    return nil
+end
+
+function YellowPages:Print(msg, shouldFlash)
+    local formatted = string.format("%s: %s", self.Title, tostring(msg))
+    DEFAULT_CHAT_FRAME:AddMessage(formatted)
+    local ypChat = self.ypChatFrame or self:FindYPChatFrame()
+    if ypChat and ypChat ~= DEFAULT_CHAT_FRAME then
+        ypChat:AddMessage(formatted)
+        if shouldFlash then
+            self:FlashYPChatTab(ypChat)
+        end
+    end
 end
 
 -- Erzeugt einen klickbaren Chat-Link für eine Handwerker-Anfrage ([Yellow-Pages: Anfrage öffnen])
@@ -175,6 +230,19 @@ function YellowPages:FormatConfirmChatLink(recipeID, count, mode, crafterName)
     return string.format("|cff00ff00|Haddon:YPC:%d:%d:%s:%s|h%s|h|r", recipeID, count, mode, crafterName, label)
 end
 
+local function FormatYPWhisperText(msg, cleanAuthor)
+    local out = msg:gsub("%[YP:(%d+):(%d+)%]", function(recIDStr, countStr)
+        return YellowPages:FormatOrderChatLink(tonumber(recIDStr), tonumber(countStr), cleanAuthor)
+    end)
+    out = out:gsub("%[YPC:(%d+):(%d+):([%u]+)%]", function(recIDStr, countStr, modeStr)
+        return YellowPages:FormatConfirmChatLink(tonumber(recIDStr), tonumber(countStr), modeStr, cleanAuthor)
+    end)
+    out = out:gsub("%[YPC:(%d+):(%d+)%]", function(recIDStr, countStr)
+        return YellowPages:FormatConfirmChatLink(tonumber(recIDStr), tonumber(countStr), "BRING", cleanAuthor)
+    end)
+    return out
+end
+
 -- Chat-Filter: Wandelt [YP:recipeID:count] und [YPC:recipeID:count:MODE] in klickbare Links um
 local function WhisperChatFilter(_, event, msg, author, ...)
     if type(msg) ~= "string" or (issecretvalue and issecretvalue(msg)) then
@@ -189,19 +257,7 @@ local function WhisperChatFilter(_, event, msg, author, ...)
         cleanAuthor = YellowPages:GetPlayerFullName("player")
     end
 
-    local ok, newMsg = pcall(function()
-        local out = msg:gsub("%[YP:(%d+):(%d+)%]", function(recIDStr, countStr)
-            return YellowPages:FormatOrderChatLink(tonumber(recIDStr), tonumber(countStr), cleanAuthor)
-        end)
-        out = out:gsub("%[YPC:(%d+):(%d+):([%u]+)%]", function(recIDStr, countStr, modeStr)
-            return YellowPages:FormatConfirmChatLink(tonumber(recIDStr), tonumber(countStr), modeStr, cleanAuthor)
-        end)
-        out = out:gsub("%[YPC:(%d+):(%d+)%]", function(recIDStr, countStr)
-            return YellowPages:FormatConfirmChatLink(tonumber(recIDStr), tonumber(countStr), "BRING", cleanAuthor)
-        end)
-        return out
-    end)
-
+    local ok, newMsg = pcall(FormatYPWhisperText, msg, cleanAuthor)
     if ok and newMsg and newMsg ~= msg then
         return false, newMsg, author, ...
     end
@@ -212,6 +268,33 @@ if ChatFrame_AddMessageEventFilter then
     pcall(ChatFrame_AddMessageEventFilter, "CHAT_MSG_WHISPER", WhisperChatFilter)
     pcall(ChatFrame_AddMessageEventFilter, "CHAT_MSG_WHISPER_INFORM", WhisperChatFilter)
 end
+
+-- Leitet ausschließlich Yellow-Pages-Whispers in den YP-Chat-Tab um und lässt den Tab bei Eingang blinken
+local ypWhisperForwardFrame = CreateFrame("Frame")
+pcall(ypWhisperForwardFrame.RegisterEvent, ypWhisperForwardFrame, "CHAT_MSG_WHISPER")
+pcall(ypWhisperForwardFrame.RegisterEvent, ypWhisperForwardFrame, "CHAT_MSG_WHISPER_INFORM")
+ypWhisperForwardFrame:SetScript("OnEvent", function(_, event, msg, author)
+    if type(msg) ~= "string" or (issecretvalue and issecretvalue(msg)) then return end
+    local isYP = msg:find("[YellowPages]", 1, true) or msg:find("[YP:", 1, true) or msg:find("[YPC:", 1, true)
+    if not isYP then return end
+
+    local ypChat = YellowPages.ypChatFrame or YellowPages:FindYPChatFrame()
+    if not ypChat or ypChat == DEFAULT_CHAT_FRAME then return end
+
+    local cleanAuthor = YellowPages:StripRealm(author) or author or "?"
+    local linkAuthor = (event == "CHAT_MSG_WHISPER_INFORM") and YellowPages:GetPlayerFullName("player") or cleanAuthor
+    local ok, formatted = pcall(FormatYPWhisperText, msg, linkAuthor)
+    local displayMsg = (ok and formatted) or msg
+
+    local prefix = (event == "CHAT_MSG_WHISPER_INFORM")
+        and ("|cffff80ff[An " .. cleanAuthor .. "]:|r ")
+        or ("|cffff80ff[" .. cleanAuthor .. "] flüstert:|r ")
+
+    ypChat:AddMessage(prefix .. displayMsg)
+    if event == "CHAT_MSG_WHISPER" then
+        YellowPages:FlashYPChatTab(ypChat)
+    end
+end)
 
 function YellowPages:IsInGuild()
     if IsInGuild and IsInGuild() then
@@ -617,6 +700,11 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         RegisterAddonPrefixSafe()
+        C_Timer.After(2, function()
+            if YellowPages.EnsureYPChatTab then
+                YellowPages:EnsureYPChatTab()
+            end
+        end)
         if YellowPages.LoadRecipeCatalog then
             YellowPages:LoadRecipeCatalog()
         end
@@ -696,6 +784,11 @@ SlashCmdList["YELLOWPAGES"] = function(msg)
     elseif cmd == "info" or cmd == "help" or cmd == "hilfe" then
         if YellowPages.ToggleInfoPage then
             YellowPages:ToggleInfoPage()
+        end
+    elseif cmd == "chat" then
+        local cf = YellowPages:EnsureYPChatTab()
+        if cf and FCF_SelectDockFrame then
+            pcall(FCF_SelectDockFrame, cf)
         end
     elseif cmd == "status" then
         if YellowPages.PrintStatus then

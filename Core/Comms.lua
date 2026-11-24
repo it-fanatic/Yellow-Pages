@@ -92,7 +92,12 @@ function YellowPages:SendSafeWhisper(msg, targetName)
             formatted = formatted:gsub("%[YPC:(%d+):(%d+)%]", function(recIDStr, countStr)
                 return self:FormatConfirmChatLink(tonumber(recIDStr), tonumber(countStr), "BRING", cleanTarget)
             end)
-            DEFAULT_CHAT_FRAME:AddMessage("|cffff80ff[Whisper -> " .. cleanTarget .. "]:|r " .. formatted)
+            local line = "|cffff80ff[Whisper -> " .. cleanTarget .. "]:|r " .. formatted
+            DEFAULT_CHAT_FRAME:AddMessage(line)
+            local ypChat = self.ypChatFrame or (self.FindYPChatFrame and self:FindYPChatFrame())
+            if ypChat and ypChat ~= DEFAULT_CHAT_FRAME then
+                ypChat:AddMessage(line)
+            end
             return
         end
     end
@@ -391,7 +396,7 @@ function YellowPages:ReceiveOfflineOrderDelivery(orderID, buyerName, recipeID, c
         or (recipe and recipe.name) or ("#" .. tostring(recipeID))
     local clickLink = self:FormatOrderChatLink(recipeID, count or 1, cleanBuyer)
 
-    self:Print(string.format(L["MSG_OFFLINE_DELIVERED"], cleanBuyer, itemName, count or 1, clickLink))
+    self:Print(string.format(L["MSG_OFFLINE_DELIVERED"], cleanBuyer, itemName, count or 1, clickLink), true)
 end
 
 -- Prüft beim eigenen Login, ob in der lokalen Datenbank Offline-Anfragen für den eigenen Charakter liegen
